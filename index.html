@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Go60 Layers</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1 id="brand-title">Go60</h1>
+    <div class="sub" id="brand-sub">loading…</div>
+    <a class="navlink" href="cheatsheet.html">cheat sheet →</a>
+    <a class="navlink" href="wm.html">WM sheet →</a>
+    <a class="navlink" href="practice.html">practice →</a>
+  </div>
+  <div class="spacer"></div>
+  <div class="toolbar">
+    <input class="search" id="search" type="search" placeholder="Search bindings  ( / )" spellcheck="false">
+    <button id="btn-peek" title="Hover a layer key to preview that layer">Peek</button>
+    <button id="btn-combos" title="Overlay combos for this layer">Combos</button>
+    <button id="btn-trans" title="Show what &amp;trans keys inherit from lower layers">Ghost ▽</button>
+    <button id="btn-idx" title="Show ZMK key-position indices">#</button>
+    <button id="btn-os" title="Modifier glyph style">⌘ Mac</button>
+    <button id="btn-copy" title="Copy this layer as plain text">Copy</button>
+    <button id="btn-theme">Light</button>
+    <button id="btn-load" title="Load a Go60 .json export from my.moergo.com/go60">Load…</button>
+    <button id="btn-reset" title="Discard the loaded layout and reload the baked one">Reload</button>
+    <input type="file" id="file" accept=".json,.keymap,.dtsi,.txt" hidden>
+  </div>
+</header>
+
+<div class="notice" id="notice"></div>
+<nav class="layers" id="layers" role="tablist"></nav>
+
+<main><div id="stage"></div></main>
+
+<section class="inspector" id="inspector"></section>
+
+<div class="dropzone" id="dropzone"><div>Drop a Go60 <code>.json</code> export</div></div>
+<div class="toast" id="toast"></div>
+
+<script src="js/geometry.js"></script>
+<script src="js/keycodes.js"></script>
+<script src="js/parse.js"></script>
+<script src="js/render.js"></script>
+<script src="data/layout.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Go60 — WM motion practice</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body class="practice">
+
+<header>
+  <div class="brand">
+    <h1>WM motions</h1>
+    <div class="sub"><a href="index.html">← layer viewer</a> · <a href="wm.html">cheat sheet</a></div>
+  </div>
+  <div class="spacer"></div>
+  <div class="toolbar">
+    <span class="counter" id="running"></span>
+    <span class="counter" id="progress"></span>
+    <button id="btn-reveal" title="Show the labels on the board">Reveal</button>
+    <button id="btn-source" title="Where answers come from">Auto</button>
+    <button id="btn-restart" title="Restart the session (Esc)">Restart</button>
+    <button id="btn-theme">Light</button>
+  </div>
+</header>
+
+<div class="srcnote" id="srcnote"></div>
+
+<section class="promptbar">
+  <div class="prompt" id="prompt"></div>
+  <div class="feedback" id="feedback"></div>
+</section>
+
+<main><div id="stage"></div></main>
+
+<section class="summary" id="summary"></section>
+
+<script src="js/geometry.js"></script>
+<script src="js/keycodes.js"></script>
+<script src="js/parse.js"></script>
+<script src="js/render.js"></script>
+<script src="js/wmjoin.js"></script>
+<script src="data/wm-actions.js"></script>
+<script src="data/layout.js"></script>
+<script src="js/practice.js"></script>
+</body>
+</html>
