@@ -479,12 +479,18 @@
     var name = head.replace(/^&/, '');
     var beh = ctx.behaviors && ctx.behaviors[name];
 
-    // Built-in Bluetooth profile macros shipped in MoErgo firmware. Named
-    // unambiguously, so don't let a definition drag them down the macro path.
-    var btm = /^bt_(\d+)$/.exec(name);
+    // Built-in Bluetooth profile macros shipped in MoErgo firmware, and this
+    // layout's &bt_hop_N replacements (tools/edits/bt-mouse-follow.js) that
+    // tap a desktop hotkey first so the machine being left pushes the mouse
+    // to the same host. Named unambiguously, so don't let a definition drag
+    // them down the macro path.
+    var btm = /^bt_(hop_)?(\d+)$/.exec(name);
     if (btm) {
-      out.cls = 'system'; out.main = 'BT ' + btm[1]; out.sub = 'profile';
-      out.desc = 'Switch output to Bluetooth profile ' + btm[1];
+      out.cls = 'system'; out.main = 'BT ' + btm[2];
+      out.sub = btm[1] ? '+mouse' : 'profile';
+      out.desc = 'Switch output to Bluetooth profile ' + btm[2] + (btm[1] ?
+        ' — taps Ctrl+Shift+F' + (17 + +btm[2]) + ' first, so the machine ' +
+        'being left pushes the mouse to the same host' : '');
       return out;
     }
 

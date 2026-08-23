@@ -10,7 +10,7 @@ Last updated 2026-08-10. **Working end to end** on macOS and Windows 10 —
 keyboard, both WM layers, Rectangle, and the macOS system shortcuts. Windows 11
 untested.
 
-Flash: `layouts/TailorKey v4.2m⁶ +wm-win2.json`
+Flash: `layouts/TailorKey v4.2m⁶ +mouse-follow.json`
 Import: `config/RectangleConfig-wm.json`
 Check:  `node tools/macos-shortcuts.js`
 
@@ -57,7 +57,7 @@ is what §7d's little Python tool was for, and it survives the collapse.
 **End to end and in daily use.** Keyboard → OS → windows moving, on macOS and
 on Windows 10. Windows 11 untested — that's tomorrow, at work.
 
-Flash `layouts/TailorKey v4.2m⁶ +wm-win2.json` (16 layers). It is the
+Flash `layouts/TailorKey v4.2m⁶ +mouse-follow.json` (16 layers). It is the
 accumulation of every edit below; the other files in `layouts/` are the
 intermediate steps, kept so a bisect is possible.
 
@@ -246,6 +246,13 @@ survives anywhere in the layout. `js/wmjoin.js` matches both forms, and
 `js/practice.js` rebuilds the name from `e.shiftKey` — `event.code` is bare
 `F13` even when Shift was sent, so without that a verb key scores as its
 travel-row twin.
+
+A second reserved namespace sits on top of the tile row:
+`LC(LS(F17))`–`LC(LS(F20))` belong to `tools/edits/bt-mouse-follow.js` — the
+Magic-layer BT keys tap them before hopping profiles, so the machine being
+left pushes the MX Master 3S to the destination host (HID++ ChangeHost via a
+per-machine Hammerspoon / AutoHotkey listener). Anything else binding
+Ctrl+Shift+F17–F20 would fire a mouse push.
 
 ## Things the layout already does
 

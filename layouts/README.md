@@ -23,7 +23,7 @@ of Moosy's original.
 
 Files accumulate one per scripted edit, oldest first, so a bisect is possible.
 The current one is whichever is newest — today that's
-`TailorKey v4.2m⁶ +wm-win2.json` (16 layers). See PLAN.md for what each edit did.
+`TailorKey v4.2m⁶ +mouse-follow.json` (16 layers). See PLAN.md for what each edit did.
 
 `tools/keymap.js` and `tools/bake.js` read the **newest** file here. The HTML
 viewer can't read the filesystem (it runs from `file://`), so either bake, or
