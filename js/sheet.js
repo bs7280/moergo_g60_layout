@@ -167,6 +167,35 @@
     return { text: text, spans: spans };
   }
 
+  /*
+   * Combos are doors too — Gaming is entered by a chord, not a layer key, and
+   * wmjoin.doors only reads layer bindings. Without this the Gaming section
+   * has no IN line at all, which is exactly the key you'd come here to find.
+   */
+  function comboDoors(model, li) {
+    var out = [];
+    (model.combos || []).forEach(function (c) {
+      var f = Codes.format(c.binding, ctxFor(model, 'mac'));
+      if (f.layer == null || f.layer !== li) return;
+      var head = String(c.binding).trim().split(/\s+/)[0];
+      var verb = head === '&tog' ? 'toggle' : head === '&to' ? 'switch'
+        : head === '&sl' ? 'sticky' : 'hold';
+      var keys = c.keys.map(function (i) { return keyLabel(model, i); }).join(' + ');
+      var note = 'combo' +
+        (c.layers && c.layers.length
+          ? ', on ' + c.layers.map(function (l) { return model.layerNames[l] || l; }).join(', ')
+          : ', any layer') +
+        (verb === 'toggle' ? ' · same chord exits' : '');
+      out.push({
+        text: verb + ' ' + keys + ' (' + note + ')',
+        spans: '<tspan class="sh-verb">' + esc(verb) + '</tspan>' +
+          '<tspan class="sh-b"> ' + esc(keys) + '</tspan>' +
+          '<tspan class="sh-faint"> (' + esc(note) + ')</tspan>'
+      });
+    });
+    return out;
+  }
+
   /* Greedy line packing: doors joined with a wide gap until the line is full. */
   function packLines(items, maxW, fs) {
     var lines = [], cur = null, curW = 0;
@@ -330,6 +359,7 @@
           var self = e.d.kind === 'toggle' && e.d.target === li;
           return doorSpan(model, e, dir, self);
         });
+        if (dir === 'in') items = comboDoors(model, li).concat(items);
         if (!items.length) return;
         packLines(items, maxLine, 11.5).forEach(function (line) {
           y += 16;
