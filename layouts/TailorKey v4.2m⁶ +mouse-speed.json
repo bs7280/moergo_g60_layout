@@ -8050,6 +8050,22 @@
       "inputProcessors": [],
       "nodes": [
         {
+          "code": "LAYER_Mouse",
+          "description": "base scroll rate (tools/edits/mouse-speed.js)",
+          "layers": [
+            9
+          ],
+          "inputProcessors": [
+            {
+              "code": "&zip_scroll_scaler",
+              "params": [
+                1,
+                3
+              ]
+            }
+          ]
+        },
+        {
           "code": "LAYER_MouseSlow",
           "description": "LAYER_MouseSlow",
           "layers": [

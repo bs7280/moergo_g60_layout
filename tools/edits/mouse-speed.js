@@ -55,8 +55,16 @@ var TIERS = {
 // Listener nodes chain when several matching layers are active — see above.
 var STACKS = true;
 
-// Scroll (&msc_input_listener) is left alone: its resting rate wasn't the
-// complaint, and scroll and movement don't have to agree.
+/*
+ * Scroll has the OPPOSITE problem — the firmware default is too fast, not too
+ * slow — so it gets the opposite treatment. Movement keeps the tiers' absolute
+ * speeds because they were tuned right and only the base was off. For scroll,
+ * everything above the base was off by the same amount, so the whole family
+ * shifts down together: the base node scales it and the tier nodes are left
+ * at their stock RELATIVE values, which chaining then applies on top of the
+ * new base. Hold Fast (×3) and you're back at exactly the old default.
+ */
+var SCROLL_BASE = [1, 3];
 
 // -----------------------------------------------------------------------
 
@@ -95,11 +103,40 @@ d.layers.forEach(function (layer, li) {
 });
 if (mouseIdx < 0) fail('no layer binds &mmv — nothing to speed up.');
 
-var listener = (d.inputListeners || []).filter(function (l) {
-  return l.code === '&mmv_input_listener';
-})[0];
-if (!listener) fail('no &mmv_input_listener in this export.');
-listener.nodes = listener.nodes || [];
+function findListener(code) {
+  var l = (d.inputListeners || []).filter(function (x) { return x.code === code; })[0];
+  if (!l) fail('no ' + code + ' in this export.');
+  l.nodes = l.nodes || [];
+  return l;
+}
+
+/** The listener node for the Mouse layer itself — added if missing. */
+function baseNodeOf(listener, scalerCode, params, label) {
+  var node = listener.nodes.filter(function (n) {
+    return (n.layers || []).length === 1 && n.layers[0] === mouseIdx;
+  })[0];
+  if (!node) {
+    node = {
+      code: 'LAYER_' + (d.layer_names[mouseIdx] || 'Mouse'),
+      description: 'base ' + label + ' (tools/edits/mouse-speed.js)',
+      layers: [mouseIdx],
+      inputProcessors: []
+    };
+    listener.nodes.unshift(node);
+  }
+  var scaler = (node.inputProcessors || []).filter(function (p) {
+    return p.code === scalerCode;
+  })[0];
+  if (!scaler) {
+    scaler = { code: scalerCode, params: [] };
+    node.inputProcessors.push(scaler);
+  }
+  log.push((d.layer_names[mouseIdx] || 'Mouse') + '  base ' + label + ' -> ' +
+    reduce(params).join(':') + '  (was firmware default ×1)');
+  scaler.params = reduce(params);
+}
+
+var listener = findListener('&mmv_input_listener');
 
 /* Rescale the existing tier nodes, matched by layer name. */
 listener.nodes.forEach(function (node) {
@@ -123,29 +160,11 @@ listener.nodes.forEach(function (node) {
   scaler.params = want;
 });
 
-/* Add — or update — the base node for the Mouse layer itself. */
-var baseNode = listener.nodes.filter(function (n) {
-  return (n.layers || []).length === 1 && n.layers[0] === mouseIdx;
-})[0];
-if (!baseNode) {
-  baseNode = {
-    code: 'LAYER_' + (d.layer_names[mouseIdx] || 'Mouse'),
-    description: 'base pointer speed (tools/edits/mouse-speed.js)',
-    layers: [mouseIdx],
-    inputProcessors: []
-  };
-  listener.nodes.unshift(baseNode);
-}
-var baseScaler = (baseNode.inputProcessors || []).filter(function (p) {
-  return p.code === '&zip_xy_scaler';
-})[0];
-if (!baseScaler) {
-  baseScaler = { code: '&zip_xy_scaler', params: [] };
-  baseNode.inputProcessors.push(baseScaler);
-}
-log.push((d.layer_names[mouseIdx] || 'Mouse') + '  base scaler -> ' +
-  reduce(BASE).join(':') + '  (was firmware default ×1)');
-baseScaler.params = reduce(BASE);
+/* Add — or update — the base nodes for the Mouse layer itself. Scroll tier
+ * nodes are untouched on purpose: their stock values are relative to the new
+ * base once chaining applies (see SCROLL_BASE above). */
+baseNodeOf(listener, '&zip_xy_scaler', BASE, 'pointer speed');
+baseNodeOf(findListener('&msc_input_listener'), '&zip_scroll_scaler', SCROLL_BASE, 'scroll rate');
 
 // -----------------------------------------------------------------------
 
