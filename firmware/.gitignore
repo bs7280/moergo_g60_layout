@@ -1,0 +1,5 @@
+# build outputs
+go60.uf2
+combined
+# moergo-sc/zmk checkout (Actions puts it here; so can you, for bare nix builds)
+src/

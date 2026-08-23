@@ -1,0 +1,80 @@
+# Build go60.uf2 from firmware/config/go60.keymap and publish it to the
+# rolling `firmware-latest` release, so the download URL never changes:
+#
+#   https://github.com/bs7280/moergo_g60_layout/releases/download/firmware-latest/go60.uf2
+#
+# Adapted from moergo-keyboards/go60-zmk-config's workflow; the only changes
+# are the firmware/ prefix, the keymap guard, and the release publish.
+name: Firmware
+
+on:
+  push:
+    paths:
+      - 'firmware/**'
+      - '.github/workflows/firmware.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The scaffold ships without a keymap on purpose — building the stock
+      # template layout would produce firmware you must never flash. Until
+      # tools/firmware-sync.js has put a real keymap here, do nothing, loudly.
+      - name: Check for a keymap
+        id: keymap
+        run: |
+          if [ -f firmware/config/go60.keymap ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo '### No keymap yet' >> "$GITHUB_STEP_SUMMARY"
+            echo 'Run `node tools/firmware-sync.js` and push the result.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - uses: actions/checkout@v4
+        if: steps.keymap.outputs.present == 'true'
+        with:
+          repository: moergo-sc/zmk
+          ref: main
+          path: firmware/src
+
+      - uses: cachix/install-nix-action@v25
+        if: steps.keymap.outputs.present == 'true'
+        with:
+          nix_path: nixpkgs=channel:nixos-22.05
+
+      - uses: cachix/cachix-action@v14
+        if: steps.keymap.outputs.present == 'true'
+        with:
+          name: moergo-glove80-zmk-dev
+          skipPush: true
+
+      - name: Build combined firmware
+        if: steps.keymap.outputs.present == 'true'
+        run: |
+          nix-build firmware/config -o combined
+          cp combined/go60.uf2 go60.uf2
+
+      - uses: actions/upload-artifact@v4
+        if: steps.keymap.outputs.present == 'true'
+        with:
+          name: go60.uf2
+          path: go60.uf2
+
+      - name: Publish to the rolling release
+        if: steps.keymap.outputs.present == 'true' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view firmware-latest --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
+            gh release create firmware-latest --repo "$GITHUB_REPOSITORY" \
+              --title "Latest Go60 firmware" --notes "placeholder"
+          gh release upload firmware-latest go60.uf2 --clobber --repo "$GITHUB_REPOSITORY"
+          gh release edit firmware-latest --repo "$GITHUB_REPOSITORY" \
+            --notes "Built from \`${GITHUB_SHA:0:7}\` on $(date -u +%Y-%m-%d). Flash BOTH halves with this same file — Magic + bootloader key, then drag it onto the drive (or run tools/flash.sh)."
