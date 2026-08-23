@@ -150,6 +150,16 @@ column each, showing what that layer actually emits at that position plus what
 you still have to configure. The twin is found by position overlap and binding
 density, not by name, so a third one would appear on its own.
 
+## Mouse follows the keyboard
+
+The Magic-layer BT keys also move the MX Master 3S: each taps a reserved
+hotkey (`Ctrl+Shift+F17`–`F19`) before hopping, and a small listener on every
+machine turns that into an HID++ `ChangeHost` push — the mouse lands on the
+same machine the keyboard just went to, no flipping it over. Keyboard side is
+`tools/edits/bt-mouse-follow.js`; per-machine setup, scripts, and the raw
+HID++ bytes live in [`host-switch/`](host-switch/). Nothing in it needs admin
+rights, deliberately.
+
 ## Practice mode
 
 `practice.html` drills **intent → physical key** for the WM layer. What the key
