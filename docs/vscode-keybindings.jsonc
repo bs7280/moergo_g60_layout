@@ -1,0 +1,35 @@
+// Companion to the VSCode_macOS / VSCode_Win keyboard layers (PLAN.md
+// §Apps layers). Defaults-first: this file exists ONLY for the chords VS
+// Code and the Claude extension ship with no default, so the layer's H J K L
+// panel-focus quad and the terminal-profile picker actually do something.
+// Everything else on those layers (U/I/O/;/T/G/S/A/C/R and the RAlt tap) rides
+// a real existing default and needs nothing added here.
+//
+// Install: Cmd/Ctrl+Shift+P -> "Preferences: Open Keyboard Shortcuts (JSON)"
+// -> merge these entries into the array that opens.
+[
+  // ---- Panel focus quad (H J K L) — no VS Code default exists for any of
+  // these, confirmed against the built-in command IDs directly. Same chords
+  // on both OSes, so one set of entries covers VSCode_macOS and VSCode_Win.
+  { "key": "ctrl+shift+f13", "command": "workbench.action.navigateLeft" },
+  { "key": "ctrl+shift+f14", "command": "workbench.action.navigateDown" },
+  { "key": "ctrl+shift+f15", "command": "workbench.action.navigateUp" },
+  { "key": "ctrl+shift+f16", "command": "workbench.action.navigateRight" },
+
+  // ---- Terminal profile picker (B). No args -> opens the profile quick
+  // pick rather than a fixed shell; verify that's still true on your VS
+  // Code version before relying on it.
+  { "key": "shift+f19", "command": "workbench.action.terminal.newWithProfile" },
+
+  // ---- Claude extension, Windows only (C key, and the RAlt-tap action) —
+  // NOT VERIFIED. The mac chords (Cmd+Shift+Esc for new session, Cmd+Esc for
+  // focus/blur) are believed to be the extension's own defaults, which is
+  // why they need nothing here. Ctrl+Shift+Esc is Windows' Task Manager, so
+  // the layer sends Shift+F18 / Shift+F17 on the Windows base instead — but
+  // the extension's actual Windows-side command IDs weren't confirmed from
+  // outside VS Code. Before flashing, open Ctrl+K Ctrl+S, search "Claude",
+  // find "new session" and "focus/toggle" (names may differ), copy their
+  // real command IDs in here, and delete this comment block.
+  // { "key": "shift+f18", "command": "<claude-extension.newSession — verify>" },
+  // { "key": "shift+f17", "command": "<claude-extension.focusToggle — verify>" }
+]

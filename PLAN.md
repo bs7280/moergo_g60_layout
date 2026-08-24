@@ -6,11 +6,13 @@ carries forward only what's still true. Where the original was wrong, the
 correction is marked **CORRECTION** rather than quietly rewritten — the reasoning
 is usually the useful part.
 
-Last updated 2026-08-10. **Working end to end** on macOS and Windows 10 —
+Last updated 2026-08-23. **Working end to end** on macOS and Windows 10 —
 keyboard, both WM layers, Rectangle, and the macOS system shortcuts. Windows 11
-untested.
+untested. New since 2026-08-10: the apps-layers plan (VS Code / Teams — see
+§Apps layers below, **layout JSON built, not yet flashed**) and the
+identity-half proposal (still unbuilt).
 
-Flash: `layouts/TailorKey v4.2m⁶ +mouse-follow.json`
+Flash: `layouts/TailorKey v4.2m⁶ +apps-layers.json`
 Import: `config/RectangleConfig-wm.json`
 Check:  `node tools/macos-shortcuts.js`
 
@@ -57,7 +59,7 @@ is what §7d's little Python tool was for, and it survives the collapse.
 **End to end and in daily use.** Keyboard → OS → windows moving, on macOS and
 on Windows 10. Windows 11 untested — that's tomorrow, at work.
 
-Flash `layouts/TailorKey v4.2m⁶ +mouse-follow.json` (16 layers). It is the
+Flash `layouts/TailorKey v4.2m⁶ +apps-layers.json` (19 layers). It is the
 accumulation of every edit below; the other files in `layouts/` are the
 intermediate steps, kept so a bisect is possible.
 
@@ -412,7 +414,6 @@ finding the twin by position overlap and binding density rather than by name.
 
 ## Not built yet
 
-
 **The left hand's identity half.** §5 called it "the highest-value part of the
 layer": jump straight to an app rather than navigating to it — `Win`+1–5 on
 Windows, the same chords in Raycast/Alfred on macOS. Faster than directional
@@ -421,7 +422,78 @@ navigation even in a real WM.
 Note this now collides with the mirror. The left hand carries the mirrored
 direction keys, so identity needs somewhere else to live — the top row, a
 second WM layer, or accepting that identity is a hold-`G` (right-hand) feature
-only. **Unresolved.**
+only.
+
+**Proposed resolution (2026-08-23): the number row.** `WM_Win` positions 1–10
+are all `&trans` today (verified against `+mouse-follow`), and the mirror never
+touched the number row — no collision. Map them to `LG(N1)`…`LG(N0)`: Windows'
+own `Win`+number semantics (activate / launch the Nth taskbar pin) mean zero
+software, same robustness argument as the rest of `WM_Win`. Digit = pin
+position, which you control by ordering the taskbar. macOS twin stays empty
+until the Raycast/Alfred hotkeys are chosen — the F-key space that's left is
+thin (see the chord registry in §Apps layers), so those should probably be
+launcher-side bindings of `⌥F13`+ rather than new keyboard emissions.
+
+## Apps layers (VS Code / Teams) — layout JSON built, not yet flashed
+
+Design preview (boards, tables, flows, open decisions):
+https://claude.ai/code/artifact/042e018d-8e3e-464a-afe6-f38896f7c56e
+
+Built by `tools/edits/apps-layers.js`, run against `+mouse-follow.json` (the
+tip at build time) → `+apps-layers.json` (19 layers). Self-validates and
+`tools/diff.js` confirms exactly 3 new layers + 3 key-binding changes, nothing
+else touched. `data/layout.js` and `docs/cheatsheet.svg` are re-baked from it.
+
+Three layers appended after `WM_Win`: `VSCode_macOS` (16), `VSCode_Win` (17),
+`Teams` (18, reachable from `HRM_WinLinx` only). Entries: `&thumb_v2_TKZ`
+(the existing generic hold-tap, not a new behavior) on #57 (`RAlt` thumb —
+hold = VSCode layer per base, tap = focus ⇄ blur Claude) and on #53 (`End`,
+win base only — hold = Teams, tap = End, unchanged). Costs held-RAlt, which
+the mod-tab combos already cover.
+
+**Still to do before this is real:**
+1. Import `+apps-layers.json` at my.moergo.com/go60, build, **Export** a fresh
+   `.keymap` into `layouts/` — `tools/firmware-sync.js` refuses a `.keymap`
+   older than the newest `.json`, so this step isn't optional.
+2. `node tools/firmware-sync.js` → copies it to `firmware/config/go60.keymap`.
+3. Commit + push (CI builds `go60.uf2` and re-points the release), then
+   `tools/flash.sh`.
+4. `docs/vscode-keybindings.jsonc` — written, with the 4 panel-focus chords
+   (`⌃⇧F13`–`⌃⇧F16`, real VS Code built-ins) and the terminal-profile picker
+   (`⇧F19`) filled in and verified. The two Windows-only Claude-extension
+   entries (`⇧F17`/`⇧F18`) are left as commented TODOs — their command IDs
+   couldn't be confirmed without the extension installed; check Ctrl+K
+   Ctrl+S in VS Code before flashing.
+
+Design rules that survived four revisions:
+
+- **Defaults-first.** Wherever VS Code or the Claude extension ships a chord,
+  the layer emits it (per-OS variants, the `Cursor`/`Cursor_macOS` pattern).
+  Muscle memory then still works on a bare laptop.
+- **Right hand nav, left hand state change.** `H J K L` = directional panel
+  focus (vim `⌃W` model; `navigateLeft/Down/Up/Right`, which VS Code ships
+  unbound — 4 custom chords). `U/I` ride `⌘⇧[`/`]` and `⌃PgUp/PgDn`, which are
+  context-smart: editor tabs normally, terminal tabs when the terminal is
+  focused.
+- **Teams can't rebind**, so its layer emits real chords; base-layer arrows
+  show through the held layer for chat-list walking.
+
+**Chord registry addition** (the full map lives in the preview; these are the
+claims to honor when touching F-key space):
+
+| bank | owner |
+| --- | --- |
+| `⌃⇧F13`–`⌃⇧F16` | apps: panel quad (both OSes) |
+| `⇧F17`–`⇧F19` | apps: Claude focus / new session (win-only need) + terminal profile picker |
+| `⇧F20`, `⌥F13`–`⌥F20` | the only free space left — spend deliberately |
+
+`⌃⇧F17`–`⌃⇧F20` (mouse-follow) and `F21`–`F24` (dead on macOS) were both
+nearly stepped on during planning; the registry exists so the next layer
+doesn't repeat that.
+
+Companion file when built: `docs/vscode-keybindings.jsonc` (8 lines — the
+entire custom surface), committed so the work machine can read it off
+github.com like the cheat sheet.
 
 ## Open questions
 
@@ -487,6 +559,29 @@ which is the expensive 90%. Everything below is about that, not about the join.
 - Extension: VS Code exports its keybindings as JSON, giving a three-way join —
   physical key → emitted chord → app action. Arguably more useful than the WM
   piece.
+
+**Launcher ("Alfred for Windows") — mostly exists already.** The idea: fuzzy
+search over open VS Code windows and applications, keyboard-summoned. Before
+building anything, note what's already covering it:
+
+- *VS Code windows*: solved in-app by the apps layer's `;` → `⌃R`
+  (`openRecent`) — typing three letters of a repo focuses that window. No
+  global tool needed for the main case.
+- *Open windows generally*: PowerToys Run is already installed on the work
+  laptop and its Window Walker plugin does switch-to-open-window by fuzzy name.
+  Try that before writing code.
+- *The residue*: if something is still missing after those two, it's probably a
+  PowerToys Run plugin (C#, small) rather than a from-scratch app — same
+  robustness caveats as Keyboard Manager (PowerToys must be running; no
+  elevated windows).
+
+**Own-WM itch, scoped honestly.** The recurring urge to build a Windows WM tool
+keeps resolving into three small, separable gaps rather than one big app:
+directional focus (the Python tool below), the two non-native `WM_Win` keys
+(center / restore — the ~50-line `SetWindowPos` helper in §Windows), and the
+launcher residue above. Building them as three tiny tools keeps each a weekend;
+fusing them into "my WM" is how the project stalls. GlazeWM remains the
+off-ramp if snapping is ever truly outgrown.
 
 **Directional-focus tool (Python, only if a WM stays unavailable).** Fills the
 one gap native Windows can't. `RegisterHotKey` + `GetMessage` loop, **not**
