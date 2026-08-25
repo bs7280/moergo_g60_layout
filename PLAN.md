@@ -663,7 +663,7 @@ same chord bank the WM daemons use (bare/`LC`/`LA`/`LS`-alone `F13`-`F20`)
 — those are OS-global hotkeys via `RegisterHotKey`/Hammerspoon, so they'd
 eat the keystroke before VS Code ever saw it regardless of focus; `LA(LS(
 ...))` is a fresh 2-deep bank nothing else uses. Entries added to
-`docs/vscode-keybindings.jsonc` alongside the existing quad — same install
+`os/vscode-keybindings.jsonc` alongside the existing quad — same install
 step (merge into VS Code's keybindings.json), not yet done on the real
 machine.
 
@@ -700,7 +700,7 @@ critical path, kept for history):
 3. ~~Commit + push..., then `tools/flash.sh`.~~ **Done — board flashed
    2026-08-24** (with `+wm-redesign.json`, which carries the apps layers
    forward unchanged plus the WM redesign and the move-tab/maximize quad).
-4. `docs/vscode-keybindings.jsonc` — written, with the 4 panel-focus chords
+4. `os/vscode-keybindings.jsonc` — written, with the 4 panel-focus chords
    (`⌃⇧F13`–`⌃⇧F16`, real VS Code built-ins), the terminal-profile picker
    (`⇧F19`), and the move-tab/maximize quad (`⌥⇧F13`–`⌥⇧F17`) filled in and
    verified. **Installed on the Mac 2026-08-24** — merged into both `Code`'s
@@ -740,7 +740,7 @@ claims to honor when touching F-key space):
 nearly stepped on during planning; the registry exists so the next layer
 doesn't repeat that.
 
-Companion file when built: `docs/vscode-keybindings.jsonc` (8 lines — the
+Companion file when built: `os/vscode-keybindings.jsonc` (8 lines — the
 entire custom surface), committed so the work machine can read it off
 github.com like the cheat sheet.
 

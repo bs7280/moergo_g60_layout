@@ -39,9 +39,12 @@
 <script src="js/parse.js"></script>
 <script src="js/render.js"></script>
 <script src="js/wmjoin.js"></script>
+<script src="js/vscodejoin.js"></script>
 <script src="js/sheet.js"></script>
 <script src="data/layout.js"></script>
 <script src="data/wm-actions.js"></script>
+<script src="data/vscode-actions.js"></script>
+<script src="data/teams-actions.js"></script>
 <script>
 (function () {
   'use strict';
@@ -59,7 +62,9 @@
   var built = window.G80Sheet.build(m, {
     title: m.title,
     source: window.G80_LAYOUT_NAME || '',
-    wmActions: window.G80_WM_ACTIONS || []
+    wmActions: window.G80_WM_ACTIONS || [],
+    vscodeActions: window.G80_VSCODE_ACTIONS || [],
+    teamsActions: window.G80_TEAMS_ACTIONS || []
   });
   document.getElementById('sheet').innerHTML = built.svg;
   document.title = 'Go60 Cheat Sheet — ' + (m.title || '');

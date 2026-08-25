@@ -20,6 +20,8 @@ var ROOT = path.resolve(__dirname, '..');
 var Parse = require(path.join(ROOT, 'js/parse.js'));
 var Sheet = require(path.join(ROOT, 'js/sheet.js'));
 var WM = require(path.join(ROOT, 'data/wm-actions.js'));
+var VS = require(path.join(ROOT, 'data/vscode-actions.js'));
+var TEAMS = require(path.join(ROOT, 'data/teams-actions.js'));
 
 function arg(name) {
   var pre = '--' + name + '=';
@@ -68,7 +70,9 @@ var built = Sheet.build(model, {
   title: model.title,
   source: src.name,
   generated: new Date().toISOString().slice(0, 10),
-  wmActions: WM.G80_WM_ACTIONS
+  wmActions: WM.G80_WM_ACTIONS,
+  vscodeActions: VS.G80_VSCODE_ACTIONS,
+  teamsActions: TEAMS.G80_TEAMS_ACTIONS
 });
 
 fs.mkdirSync(path.dirname(out), { recursive: true });

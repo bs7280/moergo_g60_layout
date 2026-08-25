@@ -1,10 +1,13 @@
-# Go60 layer visualizer
+# Go60 layout
 
-A dependency-free viewer for **MoErgo Go60** layouts. Open `index.html`; no
-build step, no server, no npm.
+One keyboard, one repo: the **MoErgo Go60** layout itself
+([`layouts/go60.keymap`](layouts/go60.keymap)), the pipeline that builds it
+into firmware, the OS-side glue it talks to ([`os/`](os/)), and a
+dependency-free viewer + cheat sheets. Open `index.html`; no build step, no
+server, no npm.
 
 ```sh
-node tools/bake.js     # bake layouts/<newest> into the page
+node tools/bake.js     # bake layouts/go60.keymap into the pages
 open index.html
 ```
 
@@ -65,11 +68,12 @@ the CLI.
 
 | Format | Where it comes from |
 | --- | --- |
-| `.keymap` | ZMK devicetree — the file the firmware actually builds from |
-| `.json` | my.moergo.com/go60 → your layout → **Export** |
+| `.keymap` | ZMK devicetree — the canonical format, and what the firmware builds from |
+| `.json` | my.moergo.com/go60 exports — the pre-2026-08-25 era; still parses, for reading history |
 
-Both are fully supported and produce identical legends; they're cross-checked
-against each other in `tools/` usage below. Two differences worth knowing:
+Both are fully supported and produce identical legends; they were
+cross-checked against each other throughout the JSON era. Two differences
+worth knowing:
 
 - The **`.keymap` is more faithful.** MoErgo's JSON export strips `&magic`'s
   parameters, so the JSON can't tell you which layer that key holds for. The
@@ -155,29 +159,29 @@ density, not by name, so a third one would appear on its own.
 The Magic-layer BT keys also move the MX Master 3S: each taps a reserved
 hotkey (`Ctrl+Shift+F17`–`F19`) before hopping, and a small listener on every
 machine turns that into an HID++ `ChangeHost` push — the mouse lands on the
-same machine the keyboard just went to, no flipping it over. Keyboard side is
-`tools/edits/bt-mouse-follow.js`; per-machine setup, scripts, and the raw
-HID++ bytes live in [`host-switch/`](host-switch/). Nothing in it needs admin
-rights, deliberately.
+same machine the keyboard just went to, no flipping it over. The keyboard
+side lives in the keymap's `&bt_hop` macros; per-machine setup, scripts, and
+the raw HID++ bytes live in [`os/host-switch/`](os/host-switch/). Nothing in
+it needs admin rights, deliberately.
 
 ## Firmware
 
-The keyboard builds from this repo — no my.moergo.com in the loop except to
-convert layout JSON to a `.keymap` export. `firmware/` is vendored from
-MoErgo's open-source [go60-zmk-config](https://github.com/moergo-keyboards/go60-zmk-config)
+The keyboard builds from this repo — my.moergo.com is not in the loop at
+all. `layouts/go60.keymap` is the source of truth; `firmware/` is vendored
+from MoErgo's open-source [go60-zmk-config](https://github.com/moergo-keyboards/go60-zmk-config)
 template; see [`firmware/README.md`](firmware/README.md) for local builds.
 
 ```sh
-node tools/firmware-sync.js    # layouts/<newest .keymap> -> firmware/config/
-git commit && git push         # Actions builds and publishes go60.uf2
+$EDITOR layouts/go60.keymap    # edit the layout (directly, or via a script)
+git commit && git push         # CI validates, builds, publishes go60.uf2
 tools/flash.sh                 # download, wait for bootloader drive, flash both halves
 ```
 
-Every push that touches `firmware/` rebuilds and re-points the rolling
-[`firmware-latest`](https://github.com/bs7280/moergo_g60_layout/releases/tag/firmware-latest)
-release, so the uf2 lives at a permanent URL. The sync script refuses a
-keymap older than the newest layout JSON — stale exports don't get to become
-firmware.
+Every push that touches the keymap or `firmware/` rebuilds and re-points the
+rolling [`firmware-latest`](https://github.com/bs7280/moergo_g60_layout/releases/tag/firmware-latest)
+release, so the uf2 lives at a permanent URL. CI copies and validates the
+keymap itself (`tools/firmware-sync.js`) — a keymap that doesn't parse fails
+the build instead of becoming firmware.
 
 ## Practice mode
 
@@ -259,8 +263,13 @@ regression check — it should report only the `&magic` positions.
 ```
 PLAN.md               WM project state, decisions and next steps
 index.html            layer viewer
+layouts/go60.keymap   THE layout — canonical, everything below reads it
+firmware/             the uf2 builds from here (vendored go60-zmk-config) — see its README
+os/                   everything machine-side: host-switch listeners, VS Code keybindings
+index.html            layer viewer
 cheatsheet.html       every layer on one tall page (vertical monitor)
 wm.html               WM cheat sheet — the layer as what it does
+vscode.html           VS Code / apps cheat sheet
 practice.html         WM motion drills
 css/app.css           theming (dark + light) and keycap styles
 js/geometry.js        Go60 physical layout, rows, fingers, bounds math
@@ -269,25 +278,30 @@ js/parse.js           .keymap devicetree + MoErgo JSON parsers, and validation
 js/render.js          SVG board builder
 js/app.js             viewer UI wiring
 js/sheet.js           full-layout sheet as one SVG, shared by page and CLI
-js/wmjoin.js          position -> F-key -> intent, shared by the sheet and drill
+js/wmjoin.js          position -> chord -> intent, shared by the sheets and drill
+js/vscodejoin.js      same join for the VS Code layers, found by name
 js/wmsheet.js         WM cheat-sheet page
+js/vscodesheet.js     VS Code cheat-sheet page
 js/practice.js        drill logic
-data/wm-actions.js    F-key -> intent map (edit this)
+data/wm-actions.js    chord -> WM intent map (edit this)
+data/vscode-actions.js  chord -> VS Code command map (edit this)
+data/teams-actions.js   chord -> Teams action map (edit this)
 data/layout.js        generated by tools/bake.js (committed so the pages work hosted)
 docs/cheatsheet.svg   generated by tools/cheatsheet.js, embedded in this README
-firmware/             the uf2 builds from here (vendored go60-zmk-config)
 tools/keymap.js       CLI
-tools/bake.js         layouts/<newest> -> data/layout.js
-tools/cheatsheet.js   layouts/<newest> -> docs/cheatsheet.svg
-tools/firmware-sync.js  layouts/<newest .keymap> -> firmware/config/go60.keymap
+tools/bake.js         layouts/go60.keymap -> data/layout.js
+tools/cheatsheet.js   layouts/go60.keymap -> docs/cheatsheet.svg
+tools/firmware-sync.js  layouts/go60.keymap -> firmware/config/go60.keymap (CI runs it too)
 tools/flash.sh        download the built uf2, flash both halves
-tools/diff.js         what changed between two exports
-tools/edits/          scripted, reviewable layout edits (run, then diff)
-tools/rectangle-config.js  WM F-keys -> a Rectangle config you can import
-tools/macos-shortcuts.js   checks the keys macOS owns, not Rectangle
-layouts/              drop your exports here
-config/               generated OS-side config (Rectangle) + what's set by hand
+tools/diff.js         what changed between two layouts
+tools/macos-shortcuts.js   checks which chords macOS owns
+PLAN.md               project state, decisions and next steps
 ```
+
+The my.moergo.com-era JSON exports and the `tools/edits/` scripts that patched
+them (one decision per script) were retired on 2026-08-25 — the keymap is the
+source of truth now. All of it is in git history through commit `8948ef8`;
+see [`layouts/README.md`](layouts/README.md) for the map.
 
 The JS files are UMD-ish: classic `<script>` globals in the browser,
 `require()`-able in Node, so browser and CLI share one implementation. No

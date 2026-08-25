@@ -1,33 +1,31 @@
-# layouts/
+# layouts/ — one file, the layout
 
-Drop your Go60 config here.
+`go60.keymap` is the canonical layout: ZMK devicetree, the same format the
+firmware compiles and every page and tool in this repo parses natively. Edit
+it (directly, or via a reviewed edit script), then:
 
-- **`.json`** — my.moergo.com/go60 → open your layout → **Export**
-  (needs "Enable local config" under Experimental Settings)
-- **`.keymap`** — the ZMK devicetree the firmware builds from
+```sh
+node tools/bake.js         # viewer + cheat sheet pick it up
+node tools/cheatsheet.js   # regenerate docs/cheatsheet.svg for the README
+git commit && git push     # CI builds go60.uf2 -> firmware-latest release
+tools/flash.sh             # both halves, same file
+```
 
-Keep **both**. They carry slightly different information and disagree in
-exactly one place, so cross-reading them is a free correctness check:
+## Where did everything go?
 
-| | `.json` | `.keymap` |
-| --- | --- | --- |
-| goes back *into* the editor | yes | no |
-| `uuid` / `parent_uuid` lineage | yes | no |
-| combo + macro descriptions | 19/19, 15/15 | comments only |
-| `&magic` parameters | **stripped** | kept |
-| hold-tap term/quick/idle/flavor | yes | yes |
+Until 2026-08-24 this directory held every iteration of the layout as MoErgo
+JSON exports — the my.moergo.com era, when the website was the only way to
+build firmware and `tools/edits/*.js` scripts patched the JSON between
+imports. That era ended when the firmware pipeline moved into this repo and
+the keymap became the source of truth.
 
-If you only keep one, keep the **`.json`** — it's the only one with an import
-path back to the editor, and the only one that remembers this layout is a fork
-of Moosy's original.
+The history is all in git, not lost:
 
-Files accumulate one per scripted edit, oldest first, so a bisect is possible.
-The current one is whichever is newest — today that's
-`TailorKey v4.2m⁶ +apps-layers.json` (19 layers). See PLAN.md for what each edit did.
+- the 13 JSON iterations and the JSON-era edit scripts (`tools/edits/`),
+  each documenting one decision, live up to commit `8948ef8`
+- `tailorkey_v1.uf2`, the original known-good firmware, is at
+  `git show 4b2e9c7:layouts/tailorkey_v1.uf2` — though any
+  `firmware-latest` release asset is a better recovery image by now
 
-`tools/keymap.js` and `tools/bake.js` read the **newest** file here. The HTML
-viewer can't read the filesystem (it runs from `file://`), so either bake, or
-drag the file onto the window — it sticks in `localStorage` after that.
-
-Keep a pristine copy of the working `.uf2` and `.json` *outside* this repo
-before the first scripted edit.
+A `.json` should never appear here again; if one does, `tools/firmware-sync.js`
+treats it as a red flag (see its header).

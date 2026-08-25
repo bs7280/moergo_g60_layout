@@ -2,15 +2,18 @@
 
 Vendored from [moergo-keyboards/go60-zmk-config](https://github.com/moergo-keyboards/go60-zmk-config)
 (MIT), building against MoErgo's open-source ZMK fork
-[moergo-sc/zmk](https://github.com/moergo-sc/zmk). The one file that matters is
-`config/go60.keymap` — put there by `node tools/firmware-sync.js`, never by
-hand, so it can't silently diverge from `layouts/`.
+[moergo-sc/zmk](https://github.com/moergo-sc/zmk). The keymap the build
+compiles is `config/go60.keymap`, which is **generated, gitignored, and never
+edited**: CI regenerates it from the canonical `layouts/go60.keymap` on every
+build via `node tools/firmware-sync.js`, which also validates it (Go60, 60
+bindings per layer, behaviours resolve) and fails the build rather than
+compile something wrong.
 
 ## The loop
 
 ```sh
-node tools/firmware-sync.js    # layouts/<newest .keymap> -> config/go60.keymap
-git commit && git push         # GitHub Actions builds go60.uf2
+$EDITOR layouts/go60.keymap    # the layout is the source of truth
+git commit && git push         # GitHub Actions syncs, validates, builds
 tools/flash.sh                 # downloads the release, flashes both halves
 ```
 
@@ -18,16 +21,12 @@ The Actions workflow (`.github/workflows/firmware.yml`) publishes every main
 build to the rolling `firmware-latest` release, so the download URL never
 changes. It also keeps the uf2 as a build artifact for older runs.
 
-The sync script refuses to copy a keymap that's older than the newest layout
-`.json` — that means the keymap export is stale and would silently build old
-firmware. Export a fresh one from my.moergo.com/go60 (import the newest JSON
-first) or pass `--force` if you know better.
-
 ## Local build (optional, no website, no GitHub)
 
 Docker (MoErgo's shrink-wrapped toolchain — slow first run, cached after):
 
 ```sh
+node tools/firmware-sync.js    # place the keymap first — CI does this for you, local builds don't
 cd firmware && ./build.sh      # -> firmware/go60.uf2
 ```
 

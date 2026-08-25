@@ -17,11 +17,12 @@
     root.G80Geometry || (isNode && require('./geometry.js')),
     root.G80Keycodes || (isNode && require('./keycodes.js')),
     root.G80Render || (isNode && require('./render.js')),
-    root.G80WMJoin || (isNode && require('./wmjoin.js'))
+    root.G80WMJoin || (isNode && require('./wmjoin.js')),
+    root.G80VSCodeJoin || (isNode && require('./vscodejoin.js'))
   );
   if (isNode) module.exports = mod;
   else root.G80Sheet = mod;
-})(typeof self !== 'undefined' ? self : this, function (Geo, Codes, Render, Join) {
+})(typeof self !== 'undefined' ? self : this, function (Geo, Codes, Render, Join, VJoin) {
   'use strict';
 
   var U = Render.U;            // px per key unit, must match render.js
@@ -263,6 +264,48 @@
     return out;
   }
 
+  /**
+   * Same idea for the VS Code layers: caps say what the chord *does* in the
+   * editor ("focus ←", "session"), with the emission as the small text —
+   * otherwise these layers read as a wall of ⌃⇧F13s, which is exactly the
+   * kind of cap nobody can learn from. Layers are found by name via
+   * vscodejoin; a layout without them just gets no legends.
+   */
+  function vscodeLegends(model, actions) {
+    if (!VJoin || !actions || !actions.length) return {};
+    var layers = VJoin.findLayers(model);
+    var out = {};
+    [layers.mac, layers.win].forEach(function (li) {
+      if (li == null) return;
+      var legends = {};
+      actions.forEach(function (a) {
+        var emit = emitLabel(model, model.layers[li][a.pos], osOf(model.layerNames[li]));
+        if (!emit) return;                       // this OS's layer skips the action
+        legends[a.pos] = { top: a.group, main: a.label, sub: emit,
+                           cls: 'layer', desc: a.prompt };
+      });
+      if (Object.keys(legends).length) out[li] = legends;
+    });
+    return out;
+  }
+
+  /** Intent legends for one layer found by name — Teams, and whoever's next. */
+  function namedLegends(model, layerName, actions) {
+    if (!actions || !actions.length) return {};
+    var li = model.layerNames.indexOf(layerName);
+    if (li < 0) return {};
+    var legends = {};
+    actions.forEach(function (a) {
+      var emit = emitLabel(model, model.layers[li][a.pos], osOf(layerName));
+      if (!emit) return;
+      legends[a.pos] = { top: a.group, main: a.label, sub: emit,
+                         cls: 'layer', desc: a.prompt };
+    });
+    var out = {};
+    if (Object.keys(legends).length) out[li] = legends;
+    return out;
+  }
+
   // ------------------------------------------------------------------ combos
 
   function comboRows(model) {
@@ -341,6 +384,10 @@
     });
 
     var legendsByLayer = wmLegends(model, opts.wmActions);
+    [vscodeLegends(model, opts.vscodeActions),
+     namedLegends(model, 'Teams', opts.teamsActions)].forEach(function (set) {
+      Object.keys(set).forEach(function (li) { legendsByLayer[li] = set[li]; });
+    });
     var order = pickLayers(model);
     var combosDone = false;
 
@@ -377,7 +424,7 @@
         st.legends = legendsByLayer[li];
         y += 16;
         parts.push('<text class="sh-line" x="' + PAD + '" y="' + y.toFixed(1) +
-          '">Caps show the window action; small text is what the key emits.</text>');
+          '">Caps show what the key does; small text is what it emits.</text>');
       }
       y += 10;
       parts.push(placedBoard(model, st, PAD, y, bs.w, bs.h));

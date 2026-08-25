@@ -31,9 +31,9 @@
  * Chord provenance:
  *  - `LC(LS(F13-16))` (H J K L, focus quad) and `LS(F19)` (terminal
  *    profile picker) were custom-assigned 2026-08-23 because VS Code ships
- *    no default for those specific commands — see docs/vscode-keybindings.jsonc.
+ *    no default for those specific commands — see os/vscode-keybindings.jsonc.
  *  - `LA(LS(F13-17))` (move-tab quad + maximize) — same reasoning, added
- *    2026-08-24, also in docs/vscode-keybindings.jsonc. Deliberately NOT
+ *    2026-08-24, also in os/vscode-keybindings.jsonc. Deliberately NOT
  *    a chord band the WM daemons already claim (bare/`LC`/`LA`/`LS`-alone
  *    `F13`-`F20`) — those are OS-global hotkeys and would eat the
  *    keystroke before VS Code ever saw it, regardless of window focus.
@@ -88,7 +88,7 @@
       command: 'workbench.action.terminal.newWithProfile' },
 
     // --------------------------------------------------------------- claude
-    { key: 'LG(LS(ESC))', winKey: 'LS(F18)', pos: 39, group: 'claude', label: 'session', prompt: 'Claude extension — new session (Windows chord unverified, see docs/vscode-keybindings.jsonc)',
+    { key: 'LG(LS(ESC))', winKey: 'LS(F18)', pos: 39, group: 'claude', label: 'session', prompt: 'Claude extension — new session (Windows chord unverified, see os/vscode-keybindings.jsonc)',
       command: 'claude-extension new session — command ID not confirmed on Windows' },
 
     // ---------------------------------------------------------------- other
