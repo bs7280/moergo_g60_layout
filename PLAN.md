@@ -194,6 +194,53 @@ Python daemon's TOML config update, and any merge of the two OS layers —
 all explicitly deferred until the keyboard layer above is reviewed and
 flashed.
 
+**v2.2 (2026-08-25): vim semantics unified across every directional
+quad on the board.** Found by testing, not by inspection: `Cursor`/
+`Cursor_macOS`'s arrow diamond and the WM place-half row both sat on
+`J K L ;` (31-34), reading left-to-right as `← ↑ ↓ →` — not vim
+semantics, just reading order. `H` did something unrelated there
+(`Ctrl+C`/`Cmd+C` on Cursor, unused on WM). The VS Code layer's `H J K L`
+quad, one column over, uses *real* vim semantics (`h`=left, `j`=down,
+`k`=up, `l`=right). Result: `J` meant "left" on one layer and "down" on
+the other — the same finger, opposite meaning, depending which layer had
+focus. `K` (up) was the one exception, already the same key both ways.
+
+Fixed by moving Cursor/Cursor_macOS's diamond and WM's place-half row
+one column left, onto `H J K L`, matching VS Code's convention instead of
+the other way around — vim's own mapping is the one either side already
+half-agreed with (`K`=up), and it's the mnemonic actually worth building
+muscle memory around. `H`(30) now carries a real WM binding for the first
+time (place-left) — safe because it's reachable only via hold-`G`
+(right hand free, `H` is just another right-hand key at that point) or
+the Magic latch, never via holding `H` itself (that's the same physical
+switch, and holding `H` is for the left hand's focus actions anyway, not
+the right hand's movement ones — no self-conflict). `Ctrl+C`/`Cmd+C`
+moved to the newly-free `;` (34). Every layer with a directional quad now
+reads the same way: `H`=←, `J`=↓, `K`=↑, `L`=→. `data/wm-actions.js`
+updated to match (place-half `pos` 31/32/33/34 → 30/32/31/33 — note `K`
+genuinely didn't move); `data/vscode-actions.js` untouched, since VS Code
+was already right.
+
+Verified: keymap re-parses clean (19 layers), `Join.plan()`/`Join.sibling()`
+still resolve correctly (41 actions, 0 missing, twin layer found), and a
+real headless browser confirmed both the WM board (`wm.html`) and the raw
+`Cursor` layer board (`index.html`) render the new mapping with no console
+errors.
+
+**v2.2 correction (same day): Cursor/Cursor_macOS reverted to `J K L ;`,
+WM stays on `H J K L`.** On reflection, moving Cursor's diamond traded
+away something real to buy the alignment: Cursor is a general-purpose
+arrow/editing layer (doubles for gaming) with its own accumulated muscle
+memory, not a vim-navigation layer — there was no matching mnemonic there
+worth protecting, unlike VS Code's `H J K L`, which exists specifically to
+mirror vim's `⌃W` model. Reverted Cursor/Cursor_macOS's row2 line back to
+its original content (`Ctrl+C`/`Cmd+C` on `H`, arrows on `J K L ;`) —
+confirmed a clean no-op against the last commit (edited, then reverted,
+zero net diff on those two layers). WM's place-half stays on `H J K L`,
+matching VS Code — the two are simply independent conventions now, no
+longer sharing a position or a reason to. `data/wm-actions.js`'s doc
+comment updated to stop calling place-half "Cursor-aligned."
+
 ## The idea — three tiers collapsed to one
 
 The original plan was three layers emitting three different things, because

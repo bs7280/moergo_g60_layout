@@ -19,10 +19,27 @@
  * → left hand's domain is focus. One rule, not "which hand has the action
  * I want" for all 27 shared actions.
  *
- * This was free to do: the Cursor/Cursor_macOS layers' arrow-key alignment
- * — the reason place-half's positions (31-34) can't move — only applies to
- * the RIGHT hand. Cursor's left hand does home-row mods + select macros,
- * unrelated, so the left hand's row2 was never actually constrained.
+ * This was free to do: the left hand was never constrained by anything —
+ * Cursor's left hand does home-row mods + select macros, unrelated.
+ *
+ * **Revised 2026-08-25: place-half moved from `J K L ;` (31-34) to
+ * `H J K L` (30-33), independently of Cursor/Cursor_macOS.** Both used to
+ * read left-to-right as `← ↑ ↓ →` starting at `J` — not vim semantics,
+ * just reading order, and the two layers shared that position purely
+ * because it was convenient, not because the underlying idea matched. That
+ * put WM at odds with the VSCode layer's `H J K L` quad, which uses REAL
+ * vim semantics (`h`=left, `j`=down, `k`=up, `l`=right) — `J` meant "left"
+ * on WM/Cursor and "down" on VS Code, a real muscle-memory trap. First fix
+ * moved Cursor/Cursor_macOS's diamond too, to keep everything aligned; on
+ * reflection that traded away something real — Cursor is a general
+ * arrow/editing layer (and doubles for gaming), not a vim-navigation one,
+ * so there was no matching mnemonic there to protect, and its `J K L ;`
+ * had its own accumulated muscle memory. **Cursor/Cursor_macOS reverted to
+ * `J K L ;`**; only WM's place-half (and the VSCode layer it's now
+ * matching) use vim order. The two are simply independent now — no shared
+ * position, no shared convention, each aligned with what actually needs it.
+ * `K` (up) is still the same key in both WM's and Cursor's conventions,
+ * pure coincidence.
  *
  * Windows: a proven Python daemon (`RegisterHotKey` + `WM_HOTKEY`, no admin
  * needed) exposes directional window focus, window swap, resize, a stable
@@ -62,10 +79,10 @@
  *          focus-dir + cycle flanked          swap                 place-extra
  *          by focus-monitor W/E
  *
- *   row2:  24   25  26  27  28   (–)     row2:  (–)  31  32  33  34   35
- *          (–)  ←   ↑   ↓   →    (–)          (–)  ←   ↑   ↓   →    center
- *          focus-direction (moved            place-half — UNCHANGED,
- *          here from row1)                    Cursor-layer aligned
+ *   row2:  24   25  26  27  28   29     row2:  30  31  32  33  34   35
+ *          (–)  ←   ↑   ↓   →    (G)          (H) ←   ↓   ↑   →    center
+ *          focus-direction (moved            place-half — vim order,
+ *          here from row1)                    independent of Cursor
  *
  *   row3:  (magic) ws5 ws-un ws-show (–) (–)  row3:  (magic) wider narrower taller (–)
  *          Windows workspace overflow          resize
@@ -76,12 +93,19 @@
  *   51=minimize, 52=restore, 53=SE quadrant. Left hand's nav-row (48-50) is
  *   unused/spare.
  *
- * `G`(29)/`H`(30) themselves are untouched `&trans` on both layers — v2's
- * first pass borrowed them for 2 workspace actions; freeing 24 positions
- * by dropping mirroring made that unnecessary, so they're back to being
- * exactly what they look like: the hold-tap trigger keys and nothing else.
- * Position 36 (Magic fallthrough) stays `&trans` for the same reason as
- * before — Magic must stay reachable by fallthrough from inside the layer.
+ * `G`(29) is still untouched `&trans` — inert either way, since it's the
+ * key you're holding when you'd otherwise reach for it. `H`(30) is
+ * DIFFERENT as of 2026-08-25: it now holds place-left (was `&trans`
+ * through v2/v2.1). That's safe precisely because it's the OTHER hand's
+ * hold key — holding `G` (left hand) to free the right hand, then
+ * pressing `H` with that same right hand's index finger, is two different
+ * fingers on two different physical switches, nothing self-referential
+ * about it. It only goes inert if you enter via holding `H` itself
+ * (right hand occupied holding the key down) — which is fine, since
+ * holding `H` is for the LEFT hand's focus actions, not the right hand's
+ * movement ones. Position 36 (Magic fallthrough) stays `&trans` for the
+ * same reason as before — Magic must stay reachable by fallthrough from
+ * inside the layer.
  *
  * Minimize/restore aren't in either daemon's original action list — added
  * back here (dropping 2 of what would've been 4 extra place-quadrants)
@@ -133,14 +157,14 @@
     { key: 'LA(F13)', pos: 23, group: 'place', label: 'full', prompt: 'Fill the whole screen (not OS-native maximize)',
       mac: 'Hammerspoon → moveToUnit(full)', win: 'daemon → place region=full' },
 
-    // ------------------------------------------------- place: halves (unchanged from v1)
-    { key: 'F17', pos: 31, group: 'place', label: '←', prompt: 'Snap the window to the LEFT half',
+    // ------------------------------------------------- place: halves (repositioned 2026-08-25, see doc comment)
+    { key: 'F17', pos: 30, group: 'place', label: '←', prompt: 'Snap the window to the LEFT half',
       mac: 'Hammerspoon → moveToUnit(left-half)', win: 'native — Win+Left', winKey: 'LG(LEFT)' },
+    { key: 'F19', pos: 31, group: 'place', label: '↓', prompt: 'Snap the window to the BOTTOM half',
+      mac: 'Hammerspoon → moveToUnit(bottom-half)', win: 'native — Win+Down', winKey: 'LG(DOWN)' },
     { key: 'F18', pos: 32, group: 'place', label: '↑', prompt: 'Snap the window to the TOP half',
       mac: 'Hammerspoon → moveToUnit(top-half)', win: 'native — Win+Up', winKey: 'LG(UP)' },
-    { key: 'F19', pos: 33, group: 'place', label: '↓', prompt: 'Snap the window to the BOTTOM half',
-      mac: 'Hammerspoon → moveToUnit(bottom-half)', win: 'native — Win+Down', winKey: 'LG(DOWN)' },
-    { key: 'F20', pos: 34, group: 'place', label: '→', prompt: 'Snap the window to the RIGHT half',
+    { key: 'F20', pos: 33, group: 'place', label: '→', prompt: 'Snap the window to the RIGHT half',
       mac: 'Hammerspoon → moveToUnit(right-half)', win: 'native — Win+Right', winKey: 'LG(RIGHT)' },
     { key: 'LA(F14)', pos: 35, group: 'place', label: 'center', prompt: 'Center the window without maximizing it',
       mac: 'Hammerspoon → moveToUnit(center, 70%)', win: 'daemon → place region=center' },
