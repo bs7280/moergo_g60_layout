@@ -1,5 +1,15 @@
 #!/usr/bin/env node
 /*
+ * RETIRED (WM redesign v2, see PLAN.md). data/wm-actions.js no longer
+ * describes Rectangle actions at all — the macOS WM layer targets a
+ * Hammerspoon daemon instead, and this script's ACTION map / regex
+ * (`/^LS\((F\d\d)\)$/`) predate the Ctrl/Alt-modified chords v2 uses, so
+ * running this now would silently find nothing to write rather than error.
+ * Left in place as history, like the other one-shot edit scripts in
+ * tools/edits/ — not maintained going forward.
+ *
+ * Everything below this notice is the PRE-v2 script, unmodified.
+ *
  * Write the WM layer's F-keys into a Rectangle config.
  *
  *   node tools/rectangle-config.js [IN.json] [OUT.json]

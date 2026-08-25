@@ -1,87 +1,198 @@
 /*
- * The WM half of the join.
+ * The WM half of the join — v2.1, one hand per domain, zero duplication.
  *
- * Your layout knows "position 31 emits F13". It cannot know what F13 *means* —
- * that lives in a WM config that doesn't exist yet. So it lives here, and the
- * practice harness joins the two on the F-key.
+ * v2 (first pass) kept v1's mirroring for the 3 "anchor" diamonds (focus,
+ * place-half, swap) — every action reachable from either hand, at the cost
+ * of 24 duplicated positions. That was the right call at v1's 12 actions
+ * (mirroring "wasted" 20% of the board); at v2's 41/27 actions it was the
+ * wrong call — the same 24 positions now compete with everything else for
+ * room, and mirroring's actual benefit (act with whichever hand is free)
+ * doesn't need duplication to work: it needs A free hand, not EITHER hand.
+ * The Magic-latch entry already gives hands-free access to the whole board
+ * regardless of mirroring, so momentary-hold's marginal value was just
+ * "quick single tap without fully latching" — preserved below by giving
+ * each hold key a FIXED, memorable domain instead of identical content.
  *
- * `pos` / `altPos` are only a fallback for before the layer is flashed. Once a
- * layer in your exported layout actually binds F13–F24, practice.js reads the
- * real positions from it and ignores these.
+ * So: LEFT hand = focus (where attention goes), RIGHT hand = movement
+ * (what happens to the window). Hold `G` (left hand) → right hand acts →
+ * right hand's domain is movement. Hold `H` (right hand) → left hand acts
+ * → left hand's domain is focus. One rule, not "which hand has the action
+ * I want" for all 27 shared actions.
  *
- * `mac` / `win` say what to CONFIGURE, not what the key emits — the emission
- * is read off the layout, because there are now two WM layers (F-keys for
- * macOS, native chords for Windows) and hardcoding either would drift.
+ * This was free to do: the Cursor/Cursor_macOS layers' arrow-key alignment
+ * — the reason place-half's positions (31-34) can't move — only applies to
+ * the RIGHT hand. Cursor's left hand does home-row mods + select macros,
+ * unrelated, so the left hand's row2 was never actually constrained.
  *
- * `prompt` is what you get drilled on. Phrase it as intent, not as the label —
- * the skill being trained is "I want the window on the left" -> finger, not
- * "the key called snap-left" -> finger.
+ * Windows: a proven Python daemon (`RegisterHotKey` + `WM_HOTKEY`, no admin
+ * needed) exposes directional window focus, window swap, resize, a stable
+ * screen-position window cycle, minimize-based fake workspaces, and ~25
+ * named placement regions — verified end to end on real 3-monitor hardware.
  *
- * Layout — the layer is mirrored, so every action has two positions. Hold `G`
- * (left index) and the right hand is free; hold `H` (right index) and the left
- * hand is. `pos` is the right-hand key, `altPos` the left-hand one.
+ * macOS: no daemon exists yet. The `mac` field below describes the intended
+ * Hammerspoon call for each action. `hs.window:focusWindowWest/East/North/
+ * South()` exists but has open correctness bugs (#2558 wrong-app-focus,
+ * #3574 hangs) — focus, swap, and cycle are all meant to be HAND-ROLLED
+ * ports of the Windows daemon's own proven geometry algorithm (reversible,
+ * non-wrapping, sorted by screen position), not the Hammerspoon builtins.
+ * Workspaces are cut entirely from macOS: `hs.spaces.moveWindowToSpace` is
+ * confirmed broken on Sequoia (open issue #3698, fix unmerged), and Mission
+ * Control already covers the underlying need.
  *
- *            hold G ->  right hand      hold H ->  left hand
- *   travel   [ mon← ] [ desk← ] [ desk→ ] [ mon→ ]      U I O P  /  Q W E R
- *   tile     [  ←   ] [   ↑   ] [   ↓   ] [  →   ]      J K L ;  /  A S D F
- *   verbs    [ full ] [center ] [  min  ] [restore]     M , . /  /  Z X C V
+ * `pos` is the ONE physical position for every action now — no `altPos`,
+ * no mirroring, full stop. Same position on both OS layers for every
+ * shared action (one physical map, two emissions, same principle as v1,
+ * just without the duplication). `key` is always the macOS/F-key-pattern
+ * representation, even for the 6 actions (place-halves, minimize, restore)
+ * where Windows uses a native `Win`+chord instead — those carry an
+ * explicit `winKey` that `tools/edits/wm-redesign-win.js` reads instead of
+ * `key`; everything else emits `key` unchanged on both OS layers.
  *
- * The verb row emits LS(F13)-LS(F16), not F21-F24. macOS cannot see F21+ —
- * Carbon never gave them virtual keycodes — so the whole set lives inside
- * F13-F20 and the verbs are 'the travel row plus Shift'.
+ * `os: 'win'` marks the 14 workspace actions that don't exist on macOS at
+ * all (omitted `os` means both). These live on `F21`-`F24`, which macOS
+ * cannot even address (no Carbon virtual keycode past F20) — zero
+ * collision risk by construction, not by careful avoidance.
  *
- * There is deliberately no CLOSE here. It used to be F23, which is the same
- * finger as snap-down (F19) one row up — so a slightly low "snap to the bottom
- * half" closed the window instead. That's the only irreversible action in the
- * set sitting under the most-used one. Closing is an application action you
- * already have on Cmd/Ctrl+W; this layer arranges windows, it doesn't destroy
- * them. Minimize took the slot because it's the missing verb and it's undoable.
+ * Physical layout (ZMK position numbers, verified against the live keymap
+ * and js/geometry.js, not estimated):
  *
- * Read left-to-right on BOTH hands — the left hand is a spatial copy, not a
- * finger mirror. Same-finger mirroring would put ← under the left index and →
- * under the left pinky, so the leftmost key would move a window right. See
- * tools/edits/wm-mirror-gh.js if you want to flip that.
+ *   LEFT hand — focus domain            RIGHT hand — movement domain
+ *   row1:  12   13  14  15  16   17     row1:  18   19  20  21  22   23
+ *          tog  ←   ◀   ▶   →    (–)          (–)  ←   ↑   ↓   →    full
+ *          focus-dir + cycle flanked          swap                 place-extra
+ *          by focus-monitor W/E
  *
- * NOTE — the tile row is ← ↑ ↓ →, NOT the vim-order ← ↓ ↑ → in the design doc.
- * That's deliberate: this layout's Cursor and Cursor_macOS layers already bind
- * positions 31-34 as LEFT / UP / DOWN / RIGHT, and the Mouse layer agrees
- * (middle finger = up). Using vim order here would put snap-up and snap-down on
- * the opposite fingers from the arrows you already use, which is exactly the
- * two-spatial-maps problem the one-map principle exists to avoid.
+ *   row2:  24   25  26  27  28   (–)     row2:  (–)  31  32  33  34   35
+ *          (–)  ←   ↑   ↓   →    (–)          (–)  ←   ↑   ↓   →    center
+ *          focus-direction (moved            place-half — UNCHANGED,
+ *          here from row1)                    Cursor-layer aligned
  *
- * If you'd rather go vim-order, swap it in the layer AND in the Cursor layers,
- * not just here.
+ *   row3:  (magic) ws5 ws-un ws-show (–) (–)  row3:  (magic) wider narrower taller (–)
+ *          Windows workspace overflow          resize
+ *          (borrows this hand's freed row3 —
+ *          administrative, not "focus" content)
+ *
+ *   nav-row (48-53, was Home/Left/Right/Up/Down/End): right hand only now —
+ *   51=minimize, 52=restore, 53=SE quadrant. Left hand's nav-row (48-50) is
+ *   unused/spare.
+ *
+ * `G`(29)/`H`(30) themselves are untouched `&trans` on both layers — v2's
+ * first pass borrowed them for 2 workspace actions; freeing 24 positions
+ * by dropping mirroring made that unnecessary, so they're back to being
+ * exactly what they look like: the hold-tap trigger keys and nothing else.
+ * Position 36 (Magic fallthrough) stays `&trans` for the same reason as
+ * before — Magic must stay reachable by fallthrough from inside the layer.
+ *
+ * Minimize/restore aren't in either daemon's original action list — added
+ * back here (dropping 2 of what would've been 4 extra place-quadrants)
+ * since minimize is far more common than a third/fourth quadrant, and
+ * macOS otherwise had zero fallback for it (Windows already covers it
+ * contextually via the unchanged Win+Up/Win+Down at the place-half row).
+ *
+ * Reserved elsewhere, never bind these regardless of future edits:
+ *   LC(LS(F17))-LC(LS(F20))   bt-mouse-follow.js BT-hop macros, both OS
+ *   LC(LS(F13))-LC(LS(F16))   apps-layers.js VS Code panel-focus quad, both OS
+ *   LS(F17), LS(F18)          apps-layers.js VS Code chords, Windows only
+ *   LS(F19)                   apps-layers.js VS Code terminal picker, both OS
  */
 (function (root) {
   root.G80_WM_ACTIONS = [
-    // ---- travel row: move between monitors and desktops
-    { key: 'F13', pos: 19, altPos: 13, group: 'travel', label: 'mon ←', prompt: 'Send this window to the monitor on your LEFT',
-      mac: 'Rectangle → Move to Previous Display', win: 'native' },
-    { key: 'F14', pos: 20, altPos: 14, group: 'travel', label: 'desk ←', prompt: 'Go to the PREVIOUS desktop',
-      mac: 'Mission Control → Move left a space', win: 'native' },
-    { key: 'F15', pos: 21, altPos: 15, group: 'travel', label: 'desk →', prompt: 'Go to the NEXT desktop',
-      mac: 'Mission Control → Move right a space', win: 'native' },
-    { key: 'F16', pos: 22, altPos: 16, group: 'travel', label: 'mon →', prompt: 'Send this window to the monitor on your RIGHT',
-      mac: 'Rectangle → Move to Next Display', win: 'native' },
+    // ==================================================== LEFT hand — focus domain
+    // ---------------------------------------------------------- focus-direction
+    { key: 'F13', pos: 25, group: 'focus', label: '←', prompt: 'Focus the window to your LEFT',
+      mac: 'Hammerspoon → hand-rolled focus_direction(\'left\')', win: 'daemon → focus-direction direction=left' },
+    { key: 'F14', pos: 26, group: 'focus', label: '↑', prompt: 'Focus the window ABOVE',
+      mac: 'Hammerspoon → hand-rolled focus_direction(\'up\')', win: 'daemon → focus-direction direction=up' },
+    { key: 'F15', pos: 27, group: 'focus', label: '↓', prompt: 'Focus the window BELOW',
+      mac: 'Hammerspoon → hand-rolled focus_direction(\'down\')', win: 'daemon → focus-direction direction=down' },
+    { key: 'F16', pos: 28, group: 'focus', label: '→', prompt: 'Focus the window to your RIGHT',
+      mac: 'Hammerspoon → hand-rolled focus_direction(\'right\')', win: 'daemon → focus-direction direction=right' },
 
-    // ---- tile row: matches the Cursor layers' existing ← ↑ ↓ → on 31-34
-    { key: 'F17', pos: 31, altPos: 25, group: 'tile', label: '←', prompt: 'Snap the window to the LEFT half',
-      mac: 'Rectangle → Left Half', win: 'native' },
-    { key: 'F18', pos: 32, altPos: 26, group: 'tile', label: '↑', prompt: 'Snap the window to the TOP half',
-      mac: 'Rectangle → Top Half', win: 'native' },
-    { key: 'F19', pos: 33, altPos: 27, group: 'tile', label: '↓', prompt: 'Snap the window to the BOTTOM half',
-      mac: 'Rectangle → Bottom Half', win: 'native' },
-    { key: 'F20', pos: 34, altPos: 28, group: 'tile', label: '→', prompt: 'Snap the window to the RIGHT half',
-      mac: 'Rectangle → Right Half', win: 'native' },
+    // -------------------------------------------------------- focus-toggle / monitor / cycle
+    { key: 'LS(F15)', pos: 12, group: 'focus', label: '⇄', prompt: 'Jump back to the window you were on before this one',
+      mac: 'Hammerspoon → focus the previously-focused window (tracked by a focus watcher)', win: 'daemon → focus-toggle' },
+    { key: 'LS(F13)', pos: 13, group: 'monitor', label: '⇤', prompt: 'Focus the frontmost window on the monitor to your LEFT',
+      mac: 'Hammerspoon → focus frontmost window on screen:toWest()', win: 'daemon → focus-monitor monitor=left' },
+    { key: 'LA(F19)', pos: 14, group: 'cycle', label: '◀', prompt: 'Cycle to the PREVIOUS window on this monitor',
+      mac: 'Hammerspoon → hand-rolled cycle, sorted by screen position, prev', win: 'daemon → cycle-window direction=prev' },
+    { key: 'LA(F20)', pos: 15, group: 'cycle', label: '▶', prompt: 'Cycle to the NEXT window on this monitor',
+      mac: 'Hammerspoon → hand-rolled cycle, sorted by screen position, next', win: 'daemon → cycle-window direction=next' },
+    { key: 'LS(F14)', pos: 16, group: 'monitor', label: '⇥', prompt: 'Focus the frontmost window on the monitor to your RIGHT',
+      mac: 'Hammerspoon → focus frontmost window on screen:toEast()', win: 'daemon → focus-monitor monitor=right' },
 
-    // ---- verb row: whole-window actions
-    { key: 'LS(F13)', pos: 43, altPos: 37, group: 'verb', label: 'full', prompt: 'Maximize — fill the screen',
-      mac: 'Rectangle → Maximize', win: 'native' },
-    { key: 'LS(F14)', pos: 44, altPos: 38, group: 'verb', label: 'center', prompt: 'Center the window without resizing it',
-      mac: 'Rectangle → Center', win: 'needs a helper' },
-    { key: 'LS(F15)', pos: 45, altPos: 39, group: 'verb', label: 'min', prompt: 'Minimize the window',
-      mac: 'App Shortcut → Minimize', win: 'native' },
-    { key: 'LS(F16)', pos: 46, altPos: 40, group: 'verb', label: 'restore', prompt: 'Restore — undo the maximize',
-      mac: 'Rectangle → Restore', win: 'needs a helper' }
+    // ==================================================== RIGHT hand — movement domain
+    // ------------------------------------------------------------- swap
+    { key: 'LC(F13)', pos: 19, group: 'swap', label: '←', prompt: 'Swap places with the window to your LEFT',
+      mac: 'Hammerspoon → hand-rolled swap(\'left\')', win: 'daemon → swap direction=left' },
+    { key: 'LC(F14)', pos: 20, group: 'swap', label: '↑', prompt: 'Swap places with the window ABOVE',
+      mac: 'Hammerspoon → hand-rolled swap(\'up\')', win: 'daemon → swap direction=up' },
+    { key: 'LC(F15)', pos: 21, group: 'swap', label: '↓', prompt: 'Swap places with the window BELOW',
+      mac: 'Hammerspoon → hand-rolled swap(\'down\')', win: 'daemon → swap direction=down' },
+    { key: 'LC(F16)', pos: 22, group: 'swap', label: '→', prompt: 'Swap places with the window to your RIGHT',
+      mac: 'Hammerspoon → hand-rolled swap(\'right\')', win: 'daemon → swap direction=right' },
+    { key: 'LA(F13)', pos: 23, group: 'place', label: 'full', prompt: 'Fill the whole screen (not OS-native maximize)',
+      mac: 'Hammerspoon → moveToUnit(full)', win: 'daemon → place region=full' },
+
+    // ------------------------------------------------- place: halves (unchanged from v1)
+    { key: 'F17', pos: 31, group: 'place', label: '←', prompt: 'Snap the window to the LEFT half',
+      mac: 'Hammerspoon → moveToUnit(left-half)', win: 'native — Win+Left', winKey: 'LG(LEFT)' },
+    { key: 'F18', pos: 32, group: 'place', label: '↑', prompt: 'Snap the window to the TOP half',
+      mac: 'Hammerspoon → moveToUnit(top-half)', win: 'native — Win+Up', winKey: 'LG(UP)' },
+    { key: 'F19', pos: 33, group: 'place', label: '↓', prompt: 'Snap the window to the BOTTOM half',
+      mac: 'Hammerspoon → moveToUnit(bottom-half)', win: 'native — Win+Down', winKey: 'LG(DOWN)' },
+    { key: 'F20', pos: 34, group: 'place', label: '→', prompt: 'Snap the window to the RIGHT half',
+      mac: 'Hammerspoon → moveToUnit(right-half)', win: 'native — Win+Right', winKey: 'LG(RIGHT)' },
+    { key: 'LA(F14)', pos: 35, group: 'place', label: 'center', prompt: 'Center the window without maximizing it',
+      mac: 'Hammerspoon → moveToUnit(center, 70%)', win: 'daemon → place region=center' },
+
+    // ------------------------------------------------------------- resize
+    { key: 'LC(F17)', pos: 43, group: 'resize', label: 'wider', prompt: 'Grow the window WIDER, about its own center',
+      mac: 'Hammerspoon → setFrame, grow about center', win: 'daemon → resize direction=wider' },
+    { key: 'LC(F18)', pos: 44, group: 'resize', label: 'narrower', prompt: 'Shrink the window NARROWER, about its own center',
+      mac: 'Hammerspoon → setFrame, shrink about center', win: 'daemon → resize direction=narrower' },
+    { key: 'LC(F19)', pos: 45, group: 'resize', label: 'taller', prompt: 'Grow the window TALLER, about its own center',
+      mac: 'Hammerspoon → setFrame, grow about center', win: 'daemon → resize direction=taller' },
+    { key: 'LC(F20)', pos: 46, group: 'resize', label: 'shorter', prompt: 'Shrink the window SHORTER, about its own center',
+      mac: 'Hammerspoon → setFrame, shrink about center', win: 'daemon → resize direction=shorter' },
+    { key: 'LA(F15)', pos: 47, group: 'place', label: 'NW', prompt: 'Snap the window to the TOP-LEFT quarter',
+      mac: 'Hammerspoon → moveToUnit(top-left)', win: 'daemon → place region=top-left' },
+
+    // -------------------------------------------------- place: minimize/restore + last quadrant
+    { key: 'LA(F16)', pos: 51, group: 'place', label: 'min', prompt: 'Minimize the window',
+      mac: 'Hammerspoon → focused:minimize()', win: 'native — Win+Down (same chord as snap-bottom; redundant on purpose)', winKey: 'LG(DOWN)' },
+    { key: 'LA(F17)', pos: 52, group: 'place', label: 'restore', prompt: 'Un-minimize / restore the window',
+      mac: 'Hammerspoon → focused:unminimize()', win: 'native — Win+Up (same chord as snap-top; redundant on purpose)', winKey: 'LG(UP)' },
+    { key: 'LA(F18)', pos: 53, group: 'place', label: 'SE', prompt: 'Snap the window to the BOTTOM-RIGHT quarter',
+      mac: 'Hammerspoon → moveToUnit(bottom-right)', win: 'daemon → place region=bottom-right' },
+
+    // ============================== workspaces (Windows only — borrows the focus hand's freed row3)
+    { key: 'F21', pos: 1, group: 'workspace', label: '1', prompt: 'Switch to workspace 1', os: 'win',
+      win: 'daemon → workspace-switch workspace=1' },
+    { key: 'F22', pos: 2, group: 'workspace', label: '2', prompt: 'Switch to workspace 2', os: 'win',
+      win: 'daemon → workspace-switch workspace=2' },
+    { key: 'F23', pos: 3, group: 'workspace', label: '3', prompt: 'Switch to workspace 3', os: 'win',
+      win: 'daemon → workspace-switch workspace=3' },
+    { key: 'F24', pos: 4, group: 'workspace', label: '4', prompt: 'Switch to workspace 4', os: 'win',
+      win: 'daemon → workspace-switch workspace=4' },
+    { key: 'LC(F21)', pos: 5, group: 'workspace', label: '5', prompt: 'Switch to workspace 5', os: 'win',
+      win: 'daemon → workspace-switch workspace=5' },
+    { key: 'LC(F22)', pos: 6, group: 'workspace', label: '6', prompt: 'Switch to workspace 6', os: 'win',
+      win: 'daemon → workspace-switch workspace=6' },
+    { key: 'LA(F21)', pos: 7, group: 'workspace', label: 'assign 1', prompt: 'Move the focused window to workspace 1 (does not switch to it)', os: 'win',
+      win: 'daemon → workspace-assign workspace=1' },
+    { key: 'LA(F22)', pos: 8, group: 'workspace', label: 'assign 2', prompt: 'Move the focused window to workspace 2 (does not switch to it)', os: 'win',
+      win: 'daemon → workspace-assign workspace=2' },
+    { key: 'LA(F23)', pos: 9, group: 'workspace', label: 'assign 3', prompt: 'Move the focused window to workspace 3 (does not switch to it)', os: 'win',
+      win: 'daemon → workspace-assign workspace=3' },
+    { key: 'LA(F24)', pos: 10, group: 'workspace', label: 'assign 4', prompt: 'Move the focused window to workspace 4 (does not switch to it)', os: 'win',
+      win: 'daemon → workspace-assign workspace=4' },
+    { key: 'LC(F23)', pos: 11, group: 'workspace', label: 'assign 5', prompt: 'Move the focused window to workspace 5 (does not switch to it)', os: 'win',
+      win: 'daemon → workspace-assign workspace=5' },
+    { key: 'LC(F24)', pos: 37, group: 'workspace', label: 'assign 6', prompt: 'Move the focused window to workspace 6 (does not switch to it)', os: 'win',
+      win: 'daemon → workspace-assign workspace=6' },
+    { key: 'LS(F23)', pos: 38, group: 'workspace', label: 'unassign', prompt: 'Remove the focused window from any workspace', os: 'win',
+      win: 'daemon → workspace-unassign' },
+    { key: 'LS(F24)', pos: 39, group: 'workspace', label: 'show', prompt: 'Print which workspace every window is on — the only way to see it', os: 'win',
+      win: 'daemon → workspace-show' }
   ];
 })(typeof self !== 'undefined' ? self : this);

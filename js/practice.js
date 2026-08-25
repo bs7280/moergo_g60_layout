@@ -336,12 +336,16 @@
       if (src !== 'click' && /^F(1[3-9]|2[0-4])$/.test(e.code)) {
         e.preventDefault();
         /*
-         * `code` is bare ("F13") even when the firmware sent Shift+F13, so
-         * rebuild the name the action map uses. The verb row emits LS(F13)-
-         * LS(F16); without this, a shifted verb key reads as its unshifted
-         * travel-row twin and scores as wrong.
+         * `code` is bare ("F13") even when the firmware sent a modified
+         * chord, so rebuild the name the action map uses. v2's catalog uses
+         * Ctrl/Alt/Shift bands (not just Shift), nested in the same
+         * Ctrl-outermost/Shift-innermost order tools/edits/wm-redesign-*.js
+         * emits — LC(LA(LS(F13))) — so this has to match that exactly or
+         * every modified chord scores as wrong regardless of which key was
+         * actually pressed.
          */
-        var name = e.shiftKey ? 'LS(' + e.code + ')' : e.code;
+        var name = (e.ctrlKey ? 'LC(' : '') + (e.altKey ? 'LA(' : '') + (e.shiftKey ? 'LS(' : '') +
+          e.code + (e.shiftKey ? ')' : '') + (e.altKey ? ')' : '') + (e.ctrlKey ? ')' : '');
         var a = state.plan.filter(function (x) { return x.key === name; })[0];
         answer(a ? a.pos : null, name);
         return;

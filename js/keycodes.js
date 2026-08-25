@@ -712,6 +712,7 @@
     isBuiltin: isBuiltin,
     tapKeycode: tapKeycode,
     toBrowserCode: toBrowserCode,
+    unwrapMods: unwrapMods,
     CATEGORIES: CATEGORIES,
     KEYCODES: K
   };

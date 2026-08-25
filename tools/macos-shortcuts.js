@@ -1,5 +1,13 @@
 #!/usr/bin/env node
 /*
+ * RETIRED (WM redesign v2, see PLAN.md). v2's macOS catalog has no Mission
+ * Control space-move or App Shortcut Minimize actions to check — minimize
+ * is now `focused:minimize()` inside the Hammerspoon daemon, not a macOS
+ * system shortcut. Left in place as history, like the other one-shot edit
+ * scripts in tools/edits/ — not maintained going forward.
+ *
+ * Everything below this notice is the PRE-v2 script, unmodified.
+ *
  * Check the three WM keys that Rectangle can't own.
  *
  *   node tools/macos-shortcuts.js

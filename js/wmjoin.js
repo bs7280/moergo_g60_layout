@@ -21,11 +21,19 @@
   'use strict';
 
   /*
-   * F13-F24 bare, or shifted. The verb row emits LS(F13)-LS(F16) because macOS
-   * has no virtual keycode for F21-F24 and so can't bind them; F21-F24 stay
-   * matchable here so an older layout still reads correctly.
+   * F13-F24, bare or wrapped in any number/combo of LC()/LA()/LS()/LG()
+   * modifiers (v2's catalog uses single Ctrl/Alt/Shift bands; nothing here
+   * assumes only one). Stripped via Codes.unwrapMods rather than a
+   * hand-rolled regex, so it can't drift from what js/keycodes.js already
+   * parses for display.
    */
-  var FKEY = /^(?:LS\()?F(?:1[3-9]|2[0-4])\)?$/;
+  function isFkey(code) {
+    var u = Codes.unwrapMods(code);
+    return /^F(?:1[3-9]|2[0-4])$/.test(u.code);
+  }
+  // Kept for anything external that still wants a plain pattern (rare — an
+  // arbitrarily-nested-parens key can't be matched by a single regex).
+  var FKEY = /^(?:L[CASG]\()*F(?:1[3-9]|2[0-4])\)*$/;
 
   function ctxOf(m) {
     return { os: 'mac', layerNames: m.layerNames, defines: m.defines, behaviors: m.behaviors };
@@ -52,7 +60,7 @@
       var found = {};
       layer.forEach(function (b, i) {
         var kc = Codes.tapKeycode(b, ctx);
-        if (kc && FKEY.test(kc)) (found[kc] = found[kc] || []).push(i);
+        if (kc && isFkey(kc)) (found[kc] = found[kc] || []).push(i);
       });
       var n = Object.keys(found).length;
       if (n && (!best || n > best.n)) best = { n: n, layer: li, positions: found };
@@ -127,10 +135,27 @@
    * The per-OS twin: another layer bound at the SAME positions but emitting
    * something else — WM_Win sends `Win+Left` where WM_practice sends `F17`.
    *
-   * Found by position overlap rather than by name, so renaming a layer doesn't
-   * break it and a third twin would be picked up for free. A layer qualifies
-   * only if it binds a real key at (nearly) every action position; layers that
-   * merely happen to share a few are ignored.
+   * First choice: a layer sharing this repo's naming convention — layer
+   * names before the first `_` (`WM_practice`/`WM_Win` both start `WM_`).
+   * "Find the other OS's WM layer" is exactly what this function is for, and
+   * this is reliable where pure position overlap no longer is (see why
+   * below) — checked empirically against the real v2 layout, not assumed.
+   *
+   * Falls back to position-overlap scoring only among that same
+   * prefix-matched set if there's more than one candidate, or the full
+   * layer list if the primary layer doesn't follow the naming convention at
+   * all. Two OS catalogs can legitimately differ in size now (v2: Windows
+   * owns 14 workspace positions macOS doesn't have at all), so recall just
+   * needs to clear a low floor, and precision (hits/total) is what should
+   * separate a real twin from a layer that just happens to bind a lot.
+   *
+   * That fallback is best-effort, not exact: once the primary layer covers
+   * most of the board (v2's WM_Win: 53 of 60 positions), almost any
+   * densely-bound layer overlaps it heavily by pigeonhole alone — verified
+   * this concretely breaks pure density scoring (a `Keypad` utility layer
+   * out-scored the real `WM_practice` twin on both hits and precision in
+   * testing), which is why the name-prefix check comes first rather than
+   * being a tiebreaker.
    */
   function sibling(model, layerIdx, positions) {
     if (!model || layerIdx == null || !positions.length) return null;
@@ -139,23 +164,34 @@
       return b && !/^&(trans|none)\b/.test(String(b).trim());
     }
 
+    var selfName = model.layerNames[layerIdx] || '';
+    var prefix = /^[A-Za-z]+_/.exec(selfName);
+    var pool = null;
+    if (prefix) {
+      var named = [];
+      model.layers.forEach(function (layer, li) {
+        if (li !== layerIdx && (model.layerNames[li] || '').indexOf(prefix[0]) === 0) named.push(li);
+      });
+      if (named.length) pool = named;
+    }
+    if (!pool) {
+      pool = [];
+      model.layers.forEach(function (layer, li) { if (li !== layerIdx) pool.push(li); });
+    }
+    if (pool.length === 1) return { layer: pool[0], name: model.layerNames[pool[0]] };
+
     var best = null;
-    model.layers.forEach(function (layer, li) {
-      if (li === layerIdx) return;
+    pool.forEach(function (li) {
+      var layer = model.layers[li];
       var hits = positions.filter(function (p) { return bound(layer[p]); }).length;
-      if (hits < positions.length * 0.8) return;
-
-      /*
-       * Overlap alone isn't enough: a base layer binds every position, so it
-       * covers the action set trivially. A twin binds the action positions and
-       * little else — the exits and not much more. Density is what tells them
-       * apart, and it needs no layer names.
-       */
+      if (hits < positions.length * 0.5) return;   // recall floor — some overlap required
       var total = layer.filter(bound).length;
-      if (total > positions.length * 1.6) return;
+      if (!total) return;
+      var precision = hits / total;
 
-      if (!best || hits > best.hits || (hits === best.hits && total < best.total)) {
-        best = { layer: li, hits: hits, total: total };
+      if (!best || precision > best.precision ||
+          (precision === best.precision && hits > best.hits)) {
+        best = { layer: li, hits: hits, total: total, precision: precision };
       }
     });
     if (!best) return null;

@@ -21,6 +21,18 @@
   // Code version before relying on it.
   { "key": "shift+f19", "command": "workbench.action.terminal.newWithProfile" },
 
+  // ---- Move-tab-to-pane quad + maximize toggle (left hand, row1 + row2
+  // outer) — the movement half of the focus/movement split (PLAN.md §WM
+  // redesign v2.1); the H/J/K/L quad above is the focus half. All five
+  // command IDs confirmed against the VS Code source directly (none have
+  // a factory default keybinding, so nothing to collide with). Same
+  // chords on both OSes — these commands are cross-platform.
+  { "key": "alt+shift+f13", "command": "workbench.action.moveEditorToLeftGroup" },
+  { "key": "alt+shift+f14", "command": "workbench.action.moveEditorToBelowGroup" },
+  { "key": "alt+shift+f15", "command": "workbench.action.moveEditorToAboveGroup" },
+  { "key": "alt+shift+f16", "command": "workbench.action.moveEditorToRightGroup" },
+  { "key": "alt+shift+f17", "command": "workbench.action.toggleMaximizeEditorGroup" },
+
   // ---- Claude extension, Windows only (C key, and the RAlt-tap action) —
   // NOT VERIFIED. The mac chords (Cmd+Shift+Esc for new session, Cmd+Esc for
   // focus/blur) are believed to be the extension's own defaults, which is

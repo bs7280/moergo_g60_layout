@@ -132,13 +132,28 @@
     var groups = {};
     state.actions.forEach(function (a) { (groups[a.group] = groups[a.group] || []).push(a); });
 
-    var win = state.sibling;
+    /*
+     * `state.layer` is whichever layer findLayer() picked as primary (most
+     * distinct F-key-style bindings) — that's no longer reliably macOS. v2's
+     * Windows layer owns 14 workspace positions macOS doesn't have at all, so
+     * Windows now binds MORE distinct F-key-pattern chords and wins that
+     * pick. Resolve both layers by actual OS instead of by primary/sibling
+     * role, so the mac column always pairs with `a.mac` and the win column
+     * always pairs with `a.win`, regardless of which one findLayer() chose.
+     */
+    var primaryOs = osOf(state.model.layerNames[state.layer]);
+    var sib = state.sibling;
+    var macLayer = primaryOs === 'mac' ? state.layer : (sib ? sib.layer : null);
+    var winLayer = primaryOs === 'mac' ? (sib ? sib.layer : null) : state.layer;
+    var macName = macLayer != null ? state.model.layerNames[macLayer] : null;
+    var winName = winLayer != null ? state.model.layerNames[winLayer] : null;
+
     var html = '<table class="sheet"><thead><tr>' +
       '<th>action</th><th>keys</th>' +
-      '<th>' + esc(state.model.layerNames[state.layer]) + '</th>' +
-      (win ? '<th>' + esc(win.name) + '</th>' : '') +
+      (macName ? '<th>' + esc(macName) + '</th>' : '') +
+      (winName ? '<th>' + esc(winName) + '</th>' : '') +
       '</tr></thead><tbody>';
-    var cols = win ? 4 : 3;
+    var cols = 2 + (macName ? 1 : 0) + (winName ? 1 : 0);
 
     Object.keys(groups).forEach(function (g) {
       html += '<tr class="grouprow"><td colspan="' + cols + '">' + esc(g) + '</td></tr>';
@@ -164,8 +179,8 @@
         }
         html += '<tr><td>' + esc(a.prompt || a.label) + '</td>' +
           '<td class="keys">' + key(h.right) + '<span class="dim"> / </span>' + key(h.left) + '</td>' +
-          cell(state.layer, a.mac, osOf(state.model.layerNames[state.layer])) +
-          (win ? cell(win.layer, a.win, osOf(win.name)) : '') + '</tr>';
+          (macName ? cell(macLayer, a.mac, 'mac') : '') +
+          (winName ? cell(winLayer, a.win, 'pc') : '') + '</tr>';
       });
     });
 
