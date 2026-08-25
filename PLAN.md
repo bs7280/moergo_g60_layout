@@ -744,6 +744,70 @@ Companion file when built: `os/vscode-keybindings.jsonc` (8 lines — the
 entire custom surface), committed so the work machine can read it off
 github.com like the cheat sheet.
 
+**VS Code layer fixes, 2026-08-25** (after real-world use, board flashed and
+tested — all four in the same pass, all against `layouts/go60.keymap`
+directly now that it's the source of truth, see §Where did everything go
+in `layouts/README.md`):
+
+1. **True mirror for the movement quad.** First placement (2026-08-24) put
+   move-tab on row1-left (`Tab Q W E`), one row up from the `H J K L` focus
+   quad it was meant to pair with — reported back as confusing specifically
+   because it wasn't a real mirror. Moved to row2-left (`A S D F`), the
+   actual mirror image of `H J K L`'s row2-right. Displaced two existing
+   one-offs (`LG(BSLH)` split-editor, the still-undocumented `LA(K)`) to the
+   row1 slots that freed up. Chords unchanged, only physical position moved
+   — no `os/vscode-keybindings.jsonc` or real `keybindings.json` edit needed
+   for this one.
+2. **Terminal focus was silently eating every custom chord.** Verified
+   against VS Code source: none of the move-tab/maximize/focus-quad command
+   IDs are in the default `terminal.integrated.commandsToSkipShell`
+   allowlist, so a keypress while focus is in the integrated terminal gets
+   sent to the shell instead of VS Code's command dispatcher — the most
+   likely reason "movement doesn't seem to work" when tested from a
+   terminal pane. Added all 10 custom command IDs to
+   `terminal.integrated.commandsToSkipShell` in both `Code`'s and `Cursor`'s
+   real `settings.json` on this Mac.
+3. **O-key MRU-switcher was unusable held.** `quickOpenPreviousRecentlyUsedEditor`
+   (Ctrl+Tab) needs Ctrl held continuously while Tab is tapped, then
+   released to commit — this key only ever sends one synthetic Ctrl+Tab per
+   physical tap, so "holding" relied on the OS's keyboard-repeat-rate
+   re-firing Tab, too fast to land on a specific editor. Replaced with
+   `workbench.action.showAllEditorsByMostRecentlyUsed` (same chord,
+   confirmed via source to be the same list as a normal persistent Quick
+   Pick — press once, arrow/type at your own pace, Enter to confirm, no
+   modifier-hold at all). Installed as an unbind-then-rebind pair in both
+   editors' real `keybindings.json` (VS Code allows only one to answer a
+   given chord; the unbind removes the factory default so they don't both
+   fire).
+4. **Dedicated Claude-focus key.** `V` (position 40, was `&trans`) sends
+   the identical chord the RAlt-tap shortcut already sends outside this
+   layer (`Cmd+Esc` mac / `Shift+F17` win, confirmed against the base
+   layer's existing `&thumb_v2_TKZ` tap action) — a second, deliberate
+   route to the same action, reachable once you're already holding RAlt
+   into the layer rather than depending on a quick tap's timing. mac side
+   needs no `keybindings.json` entry (Cmd+Esc is already the extension's
+   own default); Windows command ID is still unconfirmed, same caveat as
+   the existing new-session binding.
+
+`data/vscode-actions.js` and `os/vscode-keybindings.jsonc` updated to
+match; 21 bound positions now (was 20). Verified: keymap re-parses clean
+(19 layers), `node tools/bake.js` + `node tools/cheatsheet.js` regenerated
+without error, `vscode.html` checked in a real headless browser (no console
+errors, table shows all four changes correctly under both OS columns), and
+all four real config files (`Code`/`Cursor` × `settings.json`/
+`keybindings.json`) validated as parseable JSONC after editing.
+
+**Aside — concurrent-session note.** Mid-session, a separate long-running
+Claude process working in this same repo directory committed the JSON→
+`layouts/go60.keymap` migration (`72b95f3`) and, as a side effect of
+`git add -A`-style staging, swept up this session's in-progress keymap
+edits into that commit too (confirmed no content was lost — just landed in
+someone else's commit rather than a clean one of its own). Worth knowing
+if the history here looks tangled: two sessions were genuinely editing the
+same file around the same time. Nothing was reverted or fought over —
+observed the state, adapted the plan to the new keymap-canonical structure,
+kept going.
+
 ## Open questions
 
 - [ ] Is `LALT` on both ring fingers deliberate? Every other right-hand mod uses

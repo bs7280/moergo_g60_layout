@@ -1,9 +1,10 @@
 /*
  * The VS Code half of the join — same idea as data/wm-actions.js (a
  * position knows a chord, this file says what the chord DOES), scaled down
- * for a much smaller layer: 20 real bindings total across VSCode_macOS/
- * VSCode_Win, most already shipped since 2026-08-23, five new as of
- * 2026-08-24 (the move-tab-to-pane quad + maximize toggle).
+ * for a much smaller layer: 21 real bindings total across VSCode_macOS/
+ * VSCode_Win. Most shipped 2026-08-23; the move-tab-to-pane quad + maximize
+ * toggle were added 2026-08-24 (then repositioned 2026-08-25 — see below);
+ * a dedicated Claude-focus key was added 2026-08-25.
  *
  * Simpler schema than wm-actions.js on purpose: WM targets two entirely
  * different OS-level tools (a daemon on each side), so `mac`/`win` needed
@@ -21,12 +22,17 @@
  *
  * Physical split (2026-08-24, matches PLAN.md §WM redesign v2.1's
  * focus/movement split): right hand (H/J/K/L, row2, unchanged since
- * 2026-08-23) = FOCUS — which panel has attention. Left hand (row1
- * positions 12-15 + row2-left position 24, added 2026-08-24) = MOVEMENT —
- * move the current tab, or resize the layout by maximizing/restoring the
- * focused group. Everything else on the layer (editor/terminal/Claude
- * commands) rides VS Code's own defaults or a handful of one-off custom
- * chords, unrelated to the focus/movement split.
+ * 2026-08-23) = FOCUS — which panel has attention. Left hand row2
+ * (A/S/D/F, positions 25-28) = MOVEMENT — move the current tab, or resize
+ * the layout by maximizing/restoring the focused group. **Revised
+ * 2026-08-25**: the movement quad first shipped on row1 (12-15), offset
+ * one row from H/J/K/L — reported as confusing precisely because it wasn't
+ * a true mirror. Moved to row2-left (25-28), the actual mirror image of
+ * H/J/K/L's row2-right, displacing two pre-existing one-off bindings
+ * (split-editor, the undocumented Alt+K) to the now-free row1 slots
+ * (12/13). Everything else on the layer (editor/terminal/Claude commands)
+ * rides VS Code's own defaults or a handful of one-off custom chords,
+ * unrelated to the focus/movement split.
  *
  * Chord provenance:
  *  - `LC(LS(F13-16))` (H J K L, focus quad) and `LS(F19)` (terminal
@@ -53,17 +59,17 @@
     { key: 'LC(LS(F16))', pos: 33, group: 'focus', label: '→', prompt: 'Focus the panel to your RIGHT',
       command: 'workbench.action.navigateRight' },
 
-    // ==================================================== LEFT hand — movement domain (added 2026-08-24)
-    { key: 'LA(LS(F13))', pos: 12, group: 'movement', label: '←', prompt: 'Move the current tab into the pane to your LEFT',
-      command: 'workbench.action.moveEditorToLeftGroup' },
-    { key: 'LA(LS(F14))', pos: 13, group: 'movement', label: '↓', prompt: 'Move the current tab into the pane BELOW',
-      command: 'workbench.action.moveEditorToBelowGroup' },
-    { key: 'LA(LS(F15))', pos: 14, group: 'movement', label: '↑', prompt: 'Move the current tab into the pane ABOVE',
-      command: 'workbench.action.moveEditorToAboveGroup' },
-    { key: 'LA(LS(F16))', pos: 15, group: 'movement', label: '→', prompt: 'Move the current tab into the pane to your RIGHT',
-      command: 'workbench.action.moveEditorToRightGroup' },
+    // ==================================================== LEFT hand — movement domain (added 2026-08-24, repositioned 2026-08-25)
     { key: 'LA(LS(F17))', pos: 24, group: 'movement', label: '⤢', prompt: 'Maximize the focused pane (others hide) — press again to restore',
       command: 'workbench.action.toggleMaximizeEditorGroup' },
+    { key: 'LA(LS(F13))', pos: 25, group: 'movement', label: '←', prompt: 'Move the current tab into the pane to your LEFT',
+      command: 'workbench.action.moveEditorToLeftGroup' },
+    { key: 'LA(LS(F14))', pos: 26, group: 'movement', label: '↓', prompt: 'Move the current tab into the pane BELOW',
+      command: 'workbench.action.moveEditorToBelowGroup' },
+    { key: 'LA(LS(F15))', pos: 27, group: 'movement', label: '↑', prompt: 'Move the current tab into the pane ABOVE',
+      command: 'workbench.action.moveEditorToAboveGroup' },
+    { key: 'LA(LS(F16))', pos: 28, group: 'movement', label: '→', prompt: 'Move the current tab into the pane to your RIGHT',
+      command: 'workbench.action.moveEditorToRightGroup' },
 
     // -------------------------------------------------------------- editor / tabs
     { key: 'LG(LS(T))', winKey: 'LC(LS(T))', pos: 16, group: 'editor', label: 'reopen', prompt: 'Reopen the last closed editor',
@@ -72,9 +78,9 @@
       command: 'workbench.action.previousEditor / previousEditorInGroup — context-smart, see PLAN.md' },
     { key: 'LG(LS(RBKT))', winKey: 'LC(PG_DN)', pos: 20, group: 'editor', label: 'next', prompt: 'Next editor tab (or terminal tab, if a terminal is focused)',
       command: 'workbench.action.nextEditor / nextEditorInGroup — context-smart, see PLAN.md' },
-    { key: 'LC(TAB)', pos: 21, group: 'editor', label: 'switch', prompt: 'Quick-switch between recently used editors (hold to keep cycling)',
-      command: 'workbench.action.quickOpenPreviousRecentlyUsedEditor' },
-    { key: 'LG(BSLH)', winKey: 'LC(BSLH)', pos: 26, group: 'editor', label: 'split', prompt: 'Split the editor',
+    { key: 'LC(TAB)', pos: 21, group: 'editor', label: 'switch', prompt: 'Open the most-recently-used editor list as a normal picker — arrow keys/typing, Enter to confirm',
+      command: 'workbench.action.showAllEditorsByMostRecentlyUsed (was quickOpenPreviousRecentlyUsedEditor — see os/vscode-keybindings.jsonc for why)' },
+    { key: 'LG(BSLH)', winKey: 'LC(BSLH)', pos: 12, group: 'editor', label: 'split', prompt: 'Split the editor',
       command: 'workbench.action.splitEditor' },
     { key: 'LC(R)', pos: 34, group: 'editor', label: 'recent', prompt: 'Open a recently opened file, folder, or workspace',
       command: 'workbench.action.openRecent' },
@@ -90,9 +96,11 @@
     // --------------------------------------------------------------- claude
     { key: 'LG(LS(ESC))', winKey: 'LS(F18)', pos: 39, group: 'claude', label: 'session', prompt: 'Claude extension — new session (Windows chord unverified, see os/vscode-keybindings.jsonc)',
       command: 'claude-extension new session — command ID not confirmed on Windows' },
+    { key: 'LG(ESC)', winKey: 'LS(F17)', pos: 40, group: 'claude', label: 'focus', prompt: 'Claude extension — focus ⇄ blur (dedicated key, added 2026-08-25 — same chord as the RAlt-tap shortcut, but reachable without any tap/hold timing risk once you\'re already holding RAlt into this layer)',
+      command: 'mac: extension default (Cmd+Esc, already works — no keybindings.json entry needed). win: command ID not confirmed, see os/vscode-keybindings.jsonc' },
 
     // ---------------------------------------------------------------- other
-    { key: 'LA(K)', pos: 25, group: 'other', label: '?', prompt: 'Alt+K — bound since 2026-08-23, purpose not documented; check your real VS Code keybindings.json before relying on it',
+    { key: 'LA(K)', pos: 13, group: 'other', label: '?', prompt: 'Alt+K — bound since 2026-08-23, purpose not documented; check your real VS Code keybindings.json before relying on it',
       command: 'undocumented — verify' }
   ];
 })(typeof self !== 'undefined' ? self : this);
