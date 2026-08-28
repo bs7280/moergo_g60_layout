@@ -539,7 +539,7 @@ A second reserved namespace sits on top of the tile row:
 `LC(LS(F17))`–`LC(LS(F20))` belong to `tools/edits/bt-mouse-follow.js` — the
 Magic-layer BT keys tap them before hopping profiles, so the machine being
 left pushes the MX Master 3S to the destination host (HID++ ChangeHost via a
-per-machine Hammerspoon / AutoHotkey listener). Anything else binding
+per-machine Hammerspoon / Python / AutoHotkey listener). Anything else binding
 Ctrl+Shift+F17–F20 would fire a mouse push.
 
 ## Things the layout already does

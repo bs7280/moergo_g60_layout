@@ -1,1 +1,4 @@
 .DS_Store
+
+host-switch.log
+__pycache__/

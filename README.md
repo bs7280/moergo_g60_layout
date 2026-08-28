@@ -217,7 +217,16 @@ machine turns that into an HID++ `ChangeHost` push — the mouse lands on the
 same machine the keyboard just went to, no flipping it over. The keyboard
 side lives in the keymap's `&bt_hop` macros; per-machine setup, scripts, and
 the raw HID++ bytes live in [`os/host-switch/`](os/host-switch/). Nothing in
-it needs admin rights, deliberately.
+it needs admin rights, deliberately — and the Windows listener
+([`host_switch.py`](os/host-switch/windows/host_switch.py)) needs nothing
+*installed* either: one standard-library file, `ctypes` straight at
+`setupapi.dll` and `hid.dll`, for the machine where AutoHotkey isn't an
+option.
+
+```sh
+python host_switch.py probe            # read-only: is the wiring sound?
+python3 os/host-switch/windows/test_host_switch.py   # checkable from any machine
+```
 
 ## Firmware
 
