@@ -1,0 +1,70 @@
+// os/vscode/keybindings.jsonc — the cross-platform half of the VS Code
+// config. Merge into your editor's real `keybindings.json`:
+//
+//   Cmd/Ctrl+Shift+P -> "Preferences: Open Keyboard Shortcuts (JSON)"
+//
+// This is verbatim what is installed on the Mac (in BOTH `Code` and
+// `Cursor` — see README.md §Where it goes). Every entry here is
+// OS-independent: the VSCode_macOS and VSCode_Win keyboard layers emit
+// the identical chord at the identical position for all of them, so one
+// block covers both machines. Windows-only entries live in
+// `keybindings.windows.jsonc`.
+//
+// Defaults-first: this file exists ONLY for the chords VS Code and the
+// Claude extension ship with NO default. Everything else on those layers
+// (U/I/O/;/T/G/S/A/C/R and the RAlt tap) rides a real existing default and
+// needs nothing here — see `data/vscode-actions.js` for the full 21-key map.
+//
+// `node tools/vscode-config.js` checks a real machine against this file.
+[
+  // ---- Panel focus quad (H J K L, right hand — the FOCUS domain).
+  // No VS Code default exists for any of these four; confirmed against the
+  // built-in command IDs directly. Vim semantics: h=left, j=down, k=up,
+  // l=right, matching WM's place-half quad (PLAN.md 2026-08-25).
+  { "key": "ctrl+shift+f13", "command": "workbench.action.navigateLeft" },
+  { "key": "ctrl+shift+f14", "command": "workbench.action.navigateDown" },
+  { "key": "ctrl+shift+f15", "command": "workbench.action.navigateUp" },
+  { "key": "ctrl+shift+f16", "command": "workbench.action.navigateRight" },
+
+  // ---- Move-tab-to-pane quad + maximize toggle (A S D F + the outer key,
+  // left hand row2 — the MOVEMENT domain, a true physical mirror of the
+  // focus quad above). All five command IDs confirmed against the VS Code
+  // source; none ships a factory default, so nothing collides.
+  //
+  // The chord bank matters: `LA(LS(Fn))` is deliberately NOT one the WM
+  // daemons claim (bare / `LC` / `LA` / `LS`-alone `F13`-`F20`). Those are
+  // registered as OS-global hotkeys — Hammerspoon on the Mac, the Python
+  // `RegisterHotKey` daemon on Windows — and would eat the keystroke
+  // before VS Code ever saw it, regardless of which window has focus.
+  { "key": "alt+shift+f13", "command": "workbench.action.moveEditorToLeftGroup" },
+  { "key": "alt+shift+f14", "command": "workbench.action.moveEditorToBelowGroup" },
+  { "key": "alt+shift+f15", "command": "workbench.action.moveEditorToAboveGroup" },
+  { "key": "alt+shift+f16", "command": "workbench.action.moveEditorToRightGroup" },
+  { "key": "alt+shift+f17", "command": "workbench.action.toggleMaximizeEditorGroup" },
+
+  // ---- Terminal profile picker (B). No args -> opens the profile quick
+  // pick rather than a fixed shell.
+  { "key": "shift+f19", "command": "workbench.action.terminal.newWithProfile" },
+
+  // ---- Quick-switch between recently used editors (O key). VS Code's own
+  // `quickOpenPreviousRecentlyUsedEditor` (the Ctrl+Tab default) needs Ctrl
+  // held continuously while Tab is tapped repeatedly, then released to
+  // commit. That works on a real keyboard, but this key sends ONE synthetic
+  // Ctrl+Tab per physical tap, so "holding" would rely on the OS's
+  // keyboard-repeat rate re-firing Tab — a system-wide typing-speed
+  // setting, not tunable per binding, and far too fast to land on a
+  // specific editor. `showAllEditorsByMostRecentlyUsed` shows the same list
+  // as an ordinary persistent Quick Pick: press once, then arrow keys or
+  // type-to-filter at your own pace, Enter to confirm.
+  //
+  // The unbind (`-` prefix) removes VS Code's factory Ctrl+Tab default so
+  // only one handler answers the chord; without it both fire.
+  { "key": "ctrl+tab", "command": "-workbench.action.quickOpenPreviousRecentlyUsedEditor" },
+  { "key": "ctrl+tab", "command": "workbench.action.showAllEditorsByMostRecentlyUsed" },
+
+  // ---- Not part of the Go60 layer: two long-standing personal bindings,
+  // kept here so this file is a complete drop-in for a fresh machine.
+  // Ctrl+Alt+Down dives into the terminal, Ctrl+Alt+Up climbs back out.
+  { "key": "ctrl+alt+down", "command": "workbench.action.terminal.focus" },
+  { "key": "ctrl+alt+up", "command": "workbench.action.focusActiveEditorGroup", "when": "terminalFocus" }
+]

@@ -1,0 +1,43 @@
+// os/vscode/keybindings.windows.jsonc — the Windows-only additions.
+// Merge these into `%APPDATA%\Code\User\keybindings.json` **in addition to**
+// everything in `keybindings.jsonc`. Nothing here belongs on the Mac.
+//
+// Why anything is Windows-only at all: the Claude Code extension's own
+// shortcuts are the two chords Windows itself refuses to hand over.
+//
+//   | extension default | on macOS | on Windows                          |
+//   | ----------------- | -------- | ----------------------------------- |
+//   | focus / blur      | Cmd+Esc  | Ctrl+Esc = **opens the Start menu**  |
+//   | open in new tab   | ⌘⇧Esc    | Ctrl+Shift+Esc = **Task Manager**    |
+//
+// Both Windows chords are claimed by the shell before any application sees
+// them, so the VSCode_Win layer emits `Shift+F17` / `Shift+F18` instead
+// (positions 40 and 39), and these entries point those at the same
+// commands. The macOS layer emits the extension's real defaults and needs
+// no entries — which is exactly why this is a separate file.
+//
+// Command IDs and `when` clauses below were read straight out of the
+// installed extension's `package.json` (`contributes.keybindings`,
+// anthropic.claude-code 2.1.250) on 2026-08-28 — they are no longer the
+// unverified guesses this file carried before. Re-check after a major
+// extension update: Ctrl+Shift+P -> "Preferences: Open Default Keyboard
+// Shortcuts (JSON)" and search "claude".
+[
+  // ---- Shift+F18 (position 39) — open Claude in a new tab / new session.
+  { "key": "shift+f18", "command": "claude-vscode.editor.open",
+    "when": "!config.claudeCode.useTerminal" },
+
+  // ---- Shift+F17 (position 40, and the RAlt *tap* on the Windows base
+  // layer) — focus <-> blur the Claude input. This is one chord and THREE
+  // commands: the extension discriminates by `when`, so all three have to
+  // be bound or the toggle only works in one direction. `focus` and `blur`
+  // cover the normal (panel/sidebar) mode; `terminal.open.keyboard` is the
+  // variant used when `claudeCode.useTerminal` is on. Binding all three
+  // makes the key correct under either setting.
+  { "key": "shift+f17", "command": "claude-vscode.focus",
+    "when": "!config.claudeCode.useTerminal && editorTextFocus" },
+  { "key": "shift+f17", "command": "claude-vscode.blur",
+    "when": "!config.claudeCode.useTerminal && !editorTextFocus" },
+  { "key": "shift+f17", "command": "claude-vscode.terminal.open.keyboard",
+    "when": "config.claudeCode.useTerminal" }
+]

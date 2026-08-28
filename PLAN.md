@@ -710,7 +710,7 @@ same chord bank the WM daemons use (bare/`LC`/`LA`/`LS`-alone `F13`-`F20`)
 — those are OS-global hotkeys via `RegisterHotKey`/Hammerspoon, so they'd
 eat the keystroke before VS Code ever saw it regardless of focus; `LA(LS(
 ...))` is a fresh 2-deep bank nothing else uses. Entries added to
-`os/vscode-keybindings.jsonc` alongside the existing quad — same install
+`os/vscode/keybindings.jsonc` alongside the existing quad — same install
 step (merge into VS Code's keybindings.json), not yet done on the real
 machine.
 
@@ -747,7 +747,7 @@ critical path, kept for history):
 3. ~~Commit + push..., then `tools/flash.sh`.~~ **Done — board flashed
    2026-08-24** (with `+wm-redesign.json`, which carries the apps layers
    forward unchanged plus the WM redesign and the move-tab/maximize quad).
-4. `os/vscode-keybindings.jsonc` — written, with the 4 panel-focus chords
+4. `os/vscode/keybindings.jsonc` — written, with the 4 panel-focus chords
    (`⌃⇧F13`–`⌃⇧F16`, real VS Code built-ins), the terminal-profile picker
    (`⇧F19`), and the move-tab/maximize quad (`⌥⇧F13`–`⌥⇧F17`) filled in and
    verified. **Installed on the Mac 2026-08-24** — merged into both `Code`'s
@@ -787,7 +787,7 @@ claims to honor when touching F-key space):
 nearly stepped on during planning; the registry exists so the next layer
 doesn't repeat that.
 
-Companion file when built: `os/vscode-keybindings.jsonc` (8 lines — the
+Companion file when built: `os/vscode/keybindings.jsonc` (8 lines — the
 entire custom surface), committed so the work machine can read it off
 github.com like the cheat sheet.
 
@@ -803,7 +803,7 @@ in `layouts/README.md`):
    actual mirror image of `H J K L`'s row2-right. Displaced two existing
    one-offs (`LG(BSLH)` split-editor, the still-undocumented `LA(K)`) to the
    row1 slots that freed up. Chords unchanged, only physical position moved
-   — no `os/vscode-keybindings.jsonc` or real `keybindings.json` edit needed
+   — no `os/vscode/keybindings.jsonc` or real `keybindings.json` edit needed
    for this one.
 2. **Terminal focus was silently eating every custom chord.** Verified
    against VS Code source: none of the move-tab/maximize/focus-quad command
@@ -836,7 +836,7 @@ in `layouts/README.md`):
    own default); Windows command ID is still unconfirmed, same caveat as
    the existing new-session binding.
 
-`data/vscode-actions.js` and `os/vscode-keybindings.jsonc` updated to
+`data/vscode-actions.js` and `os/vscode/keybindings.jsonc` updated to
 match; 21 bound positions now (was 20). Verified: keymap re-parses clean
 (19 layers), `node tools/bake.js` + `node tools/cheatsheet.js` regenerated
 without error, `vscode.html` checked in a real headless browser (no console
@@ -854,6 +854,54 @@ if the history here looks tangled: two sessions were genuinely editing the
 same file around the same time. Nothing was reverted or fought over —
 observed the state, adapted the plan to the new keymap-canonical structure,
 kept going.
+
+**OS-side config vendored + made checkable, 2026-08-28.** Goal: get the
+Windows work machine built out, which needed the macOS config to exist
+somewhere other than that Mac's `~/Library`. `os/vscode-keybindings.jsonc`
+became a folder, [`os/vscode/`](os/vscode/):
+
+- `keybindings.jsonc` (unchanged content, plus the two long-standing
+  personal `Ctrl+Alt+Up/Down` terminal-focus bindings so the file is a
+  complete drop-in), `keybindings.windows.jsonc` (new), `settings.jsonc`
+  (new — the `commandsToSkipShell` list that until now existed only as
+  prose in item 2 above and as a live edit on the Mac), and a README
+  carrying the *why*: defaults-first, the three things that must be true,
+  the Windows build checklist, the chord registry, and what's deliberately
+  not vendored.
+- `os/README.md` — index of the machine side, with an honest per-machine
+  status column. It records that the Windows WM daemon, the thing that
+  actually works best of anything here, is still uncommitted and lives only
+  on that laptop. That's the next gap to close.
+- `tools/vscode-config.js` — reads a machine's real `keybindings.json` /
+  `settings.json` (JSONC, comments and trailing commas and all) and diffs
+  them against those same `.jsonc` files. One source of truth: the file you
+  paste from is the file that's checked. Read-only on purpose — merging
+  JSONC into a hand-commented file without wrecking the comments is a real
+  problem, and `print` covers the two-minute paste. Reports `all good` for
+  both `Code` and `Cursor` on this Mac, which is what makes "the macOS
+  config is in the repo" checkable rather than asserted.
+
+**The three unverified Claude-extension items are closed.** Their command
+IDs came straight out of the installed extension's `package.json`
+(`contributes.keybindings`, anthropic.claude-code 2.1.250), not from
+guessing:
+
+| position | was | is |
+| --- | --- | --- |
+| 39 | "new session — command ID not confirmed" | `claude-vscode.editor.open` |
+| 40 | "focus ⇄ blur — not confirmed" | `claude-vscode.focus` / `.blur` / `.terminal.open.keyboard` |
+| 13 | "`LA(K)` — undocumented, verify" | `claude-vscode.insertAtMention` (extension default, both OSes, nothing to install) |
+
+Two things fell out of that. First, position 40 is **one chord and three
+commands**, separated by `when` clauses (`editorTextFocus`, and whether
+`claudeCode.useTerminal` is set) — a Windows install binding only `focus`
+would get a key that focuses and never blurs. Second, the reason Windows
+needs entries at all is sharper than "the chords differ": the extension's
+Windows defaults are `Ctrl+Esc` and `Ctrl+Shift+Esc`, which are the **Start
+menu** and **Task Manager**. The shell takes both before any application is
+consulted, so defaults-first is not merely inconvenient there, it's
+impossible — which is exactly why `LS(F17)`/`LS(F18)` were reserved for
+this back on 2026-08-24, and now there's a written reason attached.
 
 ## Open questions
 

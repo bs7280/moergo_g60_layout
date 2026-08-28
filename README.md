@@ -157,6 +157,29 @@ column each, showing what that layer actually emits at that position plus what
 you still have to configure. The twin is found by position overlap and binding
 density, not by name, so a third one would appear on its own.
 
+## VS Code / apps sheet, and the config behind it
+
+`vscode.html` is the same join for the two VS Code layers (`VSCode_macOS`,
+`VSCode_Win`), found by name rather than by wmjoin's F-key-density scan —
+`WM_Win` binds far more F-key chords than either, so a shared heuristic
+would pick the wrong layer.
+
+The layer is **defaults-first**: wherever VS Code or the Claude extension
+already ships a chord, the keyboard emits *that* chord, so muscle memory
+still works on a bare laptop. Only the commands VS Code ships genuinely
+unbound need config, which is 11 entries on macOS and 13 on Windows —
+committed in [`os/vscode/`](os/vscode/) with the reasoning, the chord
+registry, and a build checklist for a new machine.
+
+```sh
+node tools/vscode-config.js              # is this machine set up?
+node tools/vscode-config.js print        # the exact block to paste
+```
+
+It reads the same `.jsonc` files you paste from, so there's no second list
+to drift, and checks every VS Code-family editor it finds (this Mac runs
+both `Code` and `Cursor`; the layer is editor-agnostic).
+
 ## Mouse follows the keyboard
 
 The Magic-layer BT keys also move the MX Master 3S: each taps a reserved
@@ -268,7 +291,9 @@ PLAN.md               WM project state, decisions and next steps
 index.html            layer viewer
 layouts/go60.keymap   THE layout — canonical, everything below reads it
 firmware/             the uf2 builds from here (vendored go60-zmk-config) — see its README
-os/                   everything machine-side: host-switch listeners, VS Code keybindings
+os/                   everything machine-side — see its README
+os/vscode/            VS Code keybindings + settings the apps layers need
+os/host-switch/       the mouse-follows-the-keyboard listeners
 index.html            layer viewer
 cheatsheet.html       every layer on one tall page (vertical monitor)
 wm.html               WM cheat sheet — the layer as what it does
@@ -298,6 +323,7 @@ tools/firmware-sync.js  layouts/go60.keymap -> firmware/config/go60.keymap (CI r
 tools/flash.sh        download the built uf2, flash both halves
 tools/diff.js         what changed between two layouts
 tools/macos-shortcuts.js   checks which chords macOS owns
+tools/vscode-config.js     checks a machine against os/vscode/
 PLAN.md               project state, decisions and next steps
 ```
 

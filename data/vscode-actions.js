@@ -37,15 +37,26 @@
  * Chord provenance:
  *  - `LC(LS(F13-16))` (H J K L, focus quad) and `LS(F19)` (terminal
  *    profile picker) were custom-assigned 2026-08-23 because VS Code ships
- *    no default for those specific commands — see os/vscode-keybindings.jsonc.
+ *    no default for those specific commands — see os/vscode/keybindings.jsonc.
  *  - `LA(LS(F13-17))` (move-tab quad + maximize) — same reasoning, added
- *    2026-08-24, also in os/vscode-keybindings.jsonc. Deliberately NOT
+ *    2026-08-24, also in os/vscode/keybindings.jsonc. Deliberately NOT
  *    a chord band the WM daemons already claim (bare/`LC`/`LA`/`LS`-alone
  *    `F13`-`F20`) — those are OS-global hotkeys and would eat the
  *    keystroke before VS Code ever saw it, regardless of window focus.
  *  - Everything else emits VS Code's own factory-default chord for that
  *    command (Reopen Closed Editor, Split Editor, etc.) — nothing custom
  *    to install for those, they just need the physical key to reach them.
+ *
+ * **2026-08-28: the three unknowns here are resolved.** The Claude
+ * extension's command IDs and the mystery `LA(K)` were all read straight
+ * out of the installed extension's own `package.json`
+ * (`contributes.keybindings`, anthropic.claude-code 2.1.250) rather than
+ * guessed at: `LA(K)` is Insert @-Mention, and the Claude keys are
+ * `claude-vscode.editor.open` and the `focus`/`blur`/`terminal.open.keyboard`
+ * trio. The trio matters — one chord, three commands separated by `when`
+ * clauses, so a Windows install that binds only `focus` gets a key that
+ * focuses and never blurs. os/vscode/ carries the entries and the reason
+ * Windows needs them at all (its defaults are Start menu and Task Manager).
  */
 (function (root) {
   root.G80_VSCODE_ACTIONS = [
@@ -79,7 +90,7 @@
     { key: 'LG(LS(RBKT))', winKey: 'LC(PG_DN)', pos: 20, group: 'editor', label: 'next', prompt: 'Next editor tab (or terminal tab, if a terminal is focused)',
       command: 'workbench.action.nextEditor / nextEditorInGroup — context-smart, see PLAN.md' },
     { key: 'LC(TAB)', pos: 21, group: 'editor', label: 'switch', prompt: 'Open the most-recently-used editor list as a normal picker — arrow keys/typing, Enter to confirm',
-      command: 'workbench.action.showAllEditorsByMostRecentlyUsed (was quickOpenPreviousRecentlyUsedEditor — see os/vscode-keybindings.jsonc for why)' },
+      command: 'workbench.action.showAllEditorsByMostRecentlyUsed (was quickOpenPreviousRecentlyUsedEditor — see os/vscode/keybindings.jsonc for why)' },
     { key: 'LG(BSLH)', winKey: 'LC(BSLH)', pos: 12, group: 'editor', label: 'split', prompt: 'Split the editor',
       command: 'workbench.action.splitEditor' },
     { key: 'LC(R)', pos: 34, group: 'editor', label: 'recent', prompt: 'Open a recently opened file, folder, or workspace',
@@ -94,13 +105,13 @@
       command: 'workbench.action.terminal.newWithProfile' },
 
     // --------------------------------------------------------------- claude
-    { key: 'LG(LS(ESC))', winKey: 'LS(F18)', pos: 39, group: 'claude', label: 'session', prompt: 'Claude extension — new session (Windows chord unverified, see os/vscode-keybindings.jsonc)',
-      command: 'claude-extension new session — command ID not confirmed on Windows' },
+    { key: 'LG(LS(ESC))', winKey: 'LS(F18)', pos: 39, group: 'claude', label: 'session', prompt: 'Claude extension — open Claude in a new tab (new session)',
+      command: 'claude-vscode.editor.open — mac rides the extension default (⌘⇧Esc); win needs an entry, its default Ctrl+Shift+Esc is Task Manager. See os/vscode/keybindings.windows.jsonc' },
     { key: 'LG(ESC)', winKey: 'LS(F17)', pos: 40, group: 'claude', label: 'focus', prompt: 'Claude extension — focus ⇄ blur (dedicated key, added 2026-08-25 — same chord as the RAlt-tap shortcut, but reachable without any tap/hold timing risk once you\'re already holding RAlt into this layer)',
-      command: 'mac: extension default (Cmd+Esc, already works — no keybindings.json entry needed). win: command ID not confirmed, see os/vscode-keybindings.jsonc' },
+      command: 'claude-vscode.focus / .blur / .terminal.open.keyboard — one chord, three commands split by `when`. mac rides the extension default (⌘Esc); win needs all three bound, its default Ctrl+Esc opens the Start menu. See os/vscode/keybindings.windows.jsonc' },
 
     // ---------------------------------------------------------------- other
-    { key: 'LA(K)', pos: 13, group: 'other', label: '?', prompt: 'Alt+K — bound since 2026-08-23, purpose not documented; check your real VS Code keybindings.json before relying on it',
-      command: 'undocumented — verify' }
+    { key: 'LA(K)', pos: 13, group: 'other', label: '@', prompt: 'Insert an @-mention reference to the current file/selection into the Claude input',
+      command: 'claude-vscode.insertAtMention — the extension\'s own default (Alt+K, editorTextFocus), same on both OSes, nothing to install' }
   ];
 })(typeof self !== 'undefined' ? self : this);

@@ -1,0 +1,43 @@
+// os/vscode/settings.jsonc — the one settings entry the layer actually
+// needs. Merge into your editor's real `settings.json`:
+//
+//   Cmd/Ctrl+Shift+P -> "Preferences: Open User Settings (JSON)"
+//
+// If you skip this, everything in `keybindings.jsonc` still works — right
+// up until focus is inside the integrated terminal, at which point the
+// custom chords silently do nothing. That failure mode reads as "the
+// layer is broken" and cost a real debugging session on 2026-08-25.
+//
+// Why: VS Code hands almost every keystroke straight to the shell while a
+// terminal has focus, so its own command dispatcher never sees it.
+// `commandsToSkipShell` is the allowlist of exceptions. It has a large
+// built-in default, but none of these ten command IDs is in it (checked
+// against the VS Code source) — the four focus commands and the five
+// movement commands ship with no keybinding at all, so there was never a
+// reason for VS Code to allowlist them.
+//
+// This is a REPLACE, not an append: VS Code merges your array with the
+// built-in defaults automatically, so listing only the additions is
+// correct. Prefix an entry with `-` to remove a default.
+//
+// Same on every OS. `node tools/vscode-config.js` checks a real machine
+// against this file.
+{
+  "terminal.integrated.commandsToSkipShell": [
+    // focus quad — H J K L (right hand)
+    "workbench.action.navigateLeft",
+    "workbench.action.navigateDown",
+    "workbench.action.navigateUp",
+    "workbench.action.navigateRight",
+
+    // movement quad + maximize — A S D F and the row2 outer key (left hand)
+    "workbench.action.moveEditorToLeftGroup",
+    "workbench.action.moveEditorToBelowGroup",
+    "workbench.action.moveEditorToAboveGroup",
+    "workbench.action.moveEditorToRightGroup",
+    "workbench.action.toggleMaximizeEditorGroup",
+
+    // MRU editor picker — O key
+    "workbench.action.showAllEditorsByMostRecentlyUsed"
+  ]
+}
