@@ -291,6 +291,79 @@
     return defines;
   }
 
+  /*
+   * Which listener a `zip_*_scaler` under it is scaling. The mouse speed
+   * layers bind nothing at all — every key is `&trans` — so these processors
+   * are the ONLY thing that tells them apart, and without reading them the
+   * sheet has literally nothing to say about layers like MouseWarp.
+   *
+   *   &mmv_input_listener {
+   *       LAYER_MouseFast { layers = <LAYER_MouseFast>;
+   *                         input-processors = <&zip_xy_scaler 3 2>; };
+   *   };
+   *
+   * -> speeds[11].move = [3, 2]
+   */
+  var SCALER_FIELD = {
+    mmv_input_listener: 'move',
+    msc_input_listener: 'scroll',
+    cirque_lh_listener: 'padLeft',
+    cirque_rh_listener: 'padRight'
+  };
+
+  /**
+   * Pointer gains and pad-activated layers, read off the input listeners.
+   * @returns {{speeds: object, autoLayer: Array}} speeds is layer index ->
+   *   { move|scroll|padLeft|padRight: [numerator, denominator] }.
+   */
+  function extractPointerSpeeds(src, defines) {
+    var clean = stripComments(src);
+    var speeds = {};
+    var autoLayer = [];
+
+    function layerNum(tok) {
+      var v = /^\d+$/.test(tok) ? tok : (defines && defines[tok]);
+      return v != null && /^\d+$/.test(String(v)) ? parseInt(v, 10) : null;
+    }
+
+    var re = /&(\w*_listener)\s*\{/g;
+    var m;
+    while ((m = re.exec(clean)) !== null) {
+      var blk = braceBlock(clean, m.index + m[0].length - 1);
+      if (!blk) continue;
+      var body = clean.slice(blk.start, blk.end);
+      re.lastIndex = blk.end;
+
+      // `zip_temp_layer` sits on the listener itself: touch the pad and the
+      // board lands on that layer for N ms. That is how Mouse is normally
+      // entered, so it belongs on the sheet next to the key-based doors.
+      var t = /&zip_temp_layer\s+([A-Za-z_]\w*|\d+)\s+(\d+)/.exec(body);
+      if (t && layerNum(t[1]) != null) {
+        autoLayer.push({ listener: m[1], layer: layerNum(t[1]), ms: parseInt(t[2], 10) });
+      }
+
+      var field = SCALER_FIELD[m[1]];
+      if (!field) continue;
+
+      var childRe = /([A-Za-z_][\w-]*)\s*\{/g;
+      var c;
+      while ((c = childRe.exec(body)) !== null) {
+        var cb = braceBlock(body, c.index + c[0].length - 1);
+        if (!cb) continue;
+        var cbody = body.slice(cb.start, cb.end);
+        childRe.lastIndex = cb.end;
+        var lm = /layers\s*=\s*<\s*([A-Za-z_]\w*|\d+)\s*>/.exec(cbody);
+        var sm = /&zip_(?:xy|scroll)_scaler\s+(\d+)\s+(\d+)/.exec(cbody);
+        if (!lm || !sm) continue;
+        var li = layerNum(lm[1]);
+        if (li == null) continue;
+        (speeds[li] || (speeds[li] = {}))[field] =
+          [parseInt(sm[1], 10), parseInt(sm[2], 10)];
+      }
+    }
+    return { speeds: speeds, autoLayer: autoLayer };
+  }
+
   // -------------------------------------------------------------- .keymap
 
   function parseKeymap(src, meta) {
@@ -356,6 +429,7 @@
       defines: defines,
       behaviors: behaviors,
       combos: combos,
+      pointer: extractPointerSpeeds(src, defines),
       warnings: warnings,
       errors: errors
     };
@@ -594,6 +668,7 @@
     extractBehaviors: extractBehaviors,
     extractCombos: extractCombos,
     extractDefines: extractDefines,
+    extractPointerSpeeds: extractPointerSpeeds,
     bindingToString: bindingToString
   };
 });

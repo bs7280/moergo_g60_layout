@@ -19,6 +19,9 @@ sticks in `localStorage`. Press **Reload** to drop it.
 The whole layout as **one tall image**, sized for a vertical monitor: every
 layer, how you get in and out of each one (read off the keymap, so it can't go
 stale), the combos, and the Mouse layer with its Slow/Warp/Fast speed holds.
+MouseSlow/Fast/Warp bind nothing at all — 60/60 `&trans` — so they print as a
+speed row (`pointer ×6 (3× base)`) read off the `inputListeners` scalers rather
+than as three more copies of the Mouse board.
 
 Three ways to read it, most-locked-down network first:
 
@@ -310,9 +313,6 @@ pointing a webview at `index.html`.
 
 ## Not handled yet
 
-- `inputListeners` (pointer speed per layer — MouseSlow/Fast/Warp are 60/60
-  `&trans` and exist only to scale pointer speed) are parsed onto the model but
-  not surfaced in the UI.
 - Mod-morph internals and `&macro_param` substitution aren't expanded; macros
   show their payload keycode and description.
 - Only `ZMK_TD_LAYER` is expanded. Any other function-like macro that defines a

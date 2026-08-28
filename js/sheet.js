@@ -197,6 +197,62 @@
     return out;
   }
 
+  /*
+   * The trackpads are a door too — `zip_temp_layer` on the cirque listeners
+   * is how Mouse is *actually* entered most of the time, and doors() only
+   * reads layer bindings, so without this the Mouse section claims the only
+   * way in is a thumb key.
+   */
+  function padDoors(model, li) {
+    var auto = (model.pointer && model.pointer.autoLayer) || [];
+    var hit = auto.filter(function (a) { return a.layer === li; });
+    if (!hit.length) return [];
+    var which = hit.length > 1 ? 'either trackpad'
+      : /_lh_/.test(hit[0].listener) ? 'the left trackpad' : 'the right trackpad';
+    var note = 'holds ' + hit[0].ms + ' ms after you stop';
+    return [{
+      text: 'touch ' + which + ' (' + note + ')',
+      spans: '<tspan class="sh-verb">touch</tspan>' +
+        '<tspan class="sh-b"> ' + esc(which) + '</tspan>' +
+        '<tspan class="sh-faint"> (' + esc(note) + ')</tspan>'
+    }];
+  }
+
+  // ------------------------------------------------------------ pointer speed
+
+  /** 2 -> "2", 1.5 -> "1.5", 1/18 -> "0.06" — a gain, not a measurement. */
+  function gainNum(v) {
+    if (v >= 10) return String(Math.round(v));
+    return v.toFixed(2).replace(/\.?0+$/, '') || '0';
+  }
+
+  var SPEED_FIELDS = [['move', 'pointer'], ['scroll', 'scroll'],
+                      ['padLeft', 'left pad'], ['padRight', 'right pad']];
+
+  /**
+   * The scaler line for a layer: what the input processors multiply by, and
+   * how that compares with the layer it falls through to. For the mouse speed
+   * layers this is the entire content of the layer.
+   */
+  function speedSpans(model, li, baseLi) {
+    var all = (model.pointer && model.pointer.speeds) || {};
+    var sp = all[li];
+    if (!sp) return null;
+    var base = baseLi != null ? all[baseLi] : null;
+    var out = [];
+    SPEED_FIELDS.forEach(function (f) {
+      var pair = sp[f[0]];
+      if (!pair || !pair[1]) return;
+      var v = pair[0] / pair[1];
+      var b = base && base[f[0]] && base[f[0]][1] ? base[f[0]][0] / base[f[0]][1] : null;
+      out.push('<tspan class="sh-faint">' + esc(f[1]) + ' </tspan>' +
+        '<tspan class="sh-b">×' + gainNum(v) + '</tspan>' +
+        (b && b !== v
+          ? '<tspan class="sh-faint"> (' + gainNum(v / b) + '× base)</tspan>' : ''));
+    });
+    return out.length ? out.join('<tspan class="sh-faint">   ·   </tspan>') : null;
+  }
+
   /* Greedy line packing: doors joined with a wide gap until the line is full. */
   function packLines(items, maxW, fs) {
     var lines = [], cur = null, curW = 0;
@@ -323,15 +379,59 @@
 
   // ------------------------------------------------------------------ build
 
-  /** Layers worth printing, mouse layers right after the base pair. */
+  /** How many keys a layer actually binds — `&trans`/`&none` don't count. */
+  function boundCount(layer) {
+    return (layer || []).filter(function (b) {
+      return b && !/^&(trans|none)\b/.test(String(b).trim());
+    }).length;
+  }
+
+  /** Every layer something can switch to, so an empty layer isn't a dead one. */
+  function reachableLayers(model) {
+    var seen = {};
+    var ctx = ctxFor(model, 'mac');
+    model.layers.forEach(function (layer) {
+      layer.forEach(function (raw) {
+        var f = Codes.format(raw, ctx);
+        if (f.layer != null) seen[f.layer] = true;
+      });
+    });
+    (model.combos || []).forEach(function (c) {
+      var f = Codes.format(c.binding, ctx);
+      if (f.layer != null) seen[f.layer] = true;
+    });
+    ((model.pointer && model.pointer.autoLayer) || []).forEach(function (a) {
+      seen[a.layer] = true;
+    });
+    return seen;
+  }
+
+  /**
+   * Which layer an all-`&trans` layer shows the keys of: whatever you were on
+   * when you reached for it. MouseSlow is only ever entered from Mouse, so its
+   * caps are Mouse's caps.
+   */
+  function inheritsFrom(model, li) {
+    var from = {};
+    Join.doors(model, li).into.forEach(function (d) { from[d.layer] = true; });
+    var keys = Object.keys(from);
+    return keys.length === 1 ? +keys[0] : null;
+  }
+
+  /**
+   * Layers worth printing, mouse layers right after the base pair.
+   *
+   * A layer that binds nothing is still worth printing when something can
+   * reach it — MouseSlow/Fast/Warp are 60 `&trans` keys apiece whose whole
+   * job is the pointer scaler on the input listener, and dropping them for
+   * being "empty" is what left the sheet with a hole from 10 to 12.
+   */
   function pickLayers(model) {
-    function bound(layer) {
-      return layer.filter(function (b) {
-        return b && !/^&(trans|none)\b/.test(String(b).trim());
-      }).length;
-    }
+    var reachable = reachableLayers(model);
     var idxs = [];
-    model.layers.forEach(function (l, li) { if (bound(l)) idxs.push(li); });
+    model.layers.forEach(function (l, li) {
+      if (boundCount(l) || reachable[li]) idxs.push(li);
+    });
     function rank(li) {
       if (li <= 1) return 0;
       if (/mouse/i.test(model.layerNames[li] || '')) return 1;
@@ -406,25 +506,62 @@
           var self = e.d.kind === 'toggle' && e.d.target === li;
           return doorSpan(model, e, dir, self);
         });
-        if (dir === 'in') items = comboDoors(model, li).concat(items);
+        if (dir === 'in') items = padDoors(model, li).concat(comboDoors(model, li), items);
         if (!items.length) return;
-        packLines(items, maxLine, 11.5).forEach(function (line) {
+        // Gutter label on the first line only — a second "OUT" under the
+        // first reads as a second list rather than a wrap.
+        packLines(items, maxLine, 11.5).forEach(function (line, i) {
           y += 16;
-          parts.push('<text class="sh-lbl" x="' + PAD + '" y="' + y.toFixed(1) + '">' + dir.toUpperCase() + '</text>');
+          if (!i) {
+            parts.push('<text class="sh-lbl" x="' + PAD + '" y="' + y.toFixed(1) + '">' +
+              dir.toUpperCase() + '</text>');
+          }
           parts.push('<text class="sh-line" x="' + (PAD + 32) + '" y="' + y.toFixed(1) + '">' + line + '</text>');
         });
       });
     }
 
+    function line(str) {
+      y += 16;
+      parts.push('<text class="sh-line" x="' + PAD + '" y="' + y.toFixed(1) + '">' + str + '</text>');
+    }
+
+    function speedBlock(li, baseLi) {
+      var sp = speedSpans(model, li, baseLi);
+      if (!sp) return;
+      y += 16;
+      // "SPEED" is wider than the IN/OUT gutter it shares a column with.
+      parts.push('<text class="sh-lbl" x="' + PAD + '" y="' + y.toFixed(1) + '">SPEED</text>');
+      parts.push('<text class="sh-line" x="' + (PAD + 46) + '" y="' + y.toFixed(1) + '">' + sp + '</text>');
+    }
+
+    /*
+     * A layer with no bindings of its own gets the doors and the scaler but no
+     * board: every cap would be a ghost of the layer it came from, so three
+     * more copies of the Mouse board would say nothing the first one didn't.
+     */
+    function variantSection(li) {
+      var from = inheritsFrom(model, li);
+      section(model.layerNames[li] || 'layer ' + li, li);
+      line('<tspan class="sh-faint">Every key is </tspan><tspan class="sh-b">▽</tspan>' +
+        '<tspan class="sh-faint"> — the caps stay exactly as they are on </tspan>' +
+        (from != null
+          ? '<tspan class="sh-tgt">' + from + ' · ' + esc(model.layerNames[from] || from) + '</tspan>'
+          : '<tspan class="sh-faint">the layer underneath</tspan>') +
+        '<tspan class="sh-faint">; only the pointer gain changes.</tspan>');
+      doorBlock(li);
+      speedBlock(li, from);
+    }
+
     function layerSection(li) {
+      if (!boundCount(model.layers[li])) return variantSection(li);
       section(model.layerNames[li] || 'layer ' + li, li);
       doorBlock(li);
+      speedBlock(li, null);
       var st = { board: BOARD(), layer: li, os: osOf(model.layerNames[li]), showTrans: true };
       if (legendsByLayer[li]) {
         st.legends = legendsByLayer[li];
-        y += 16;
-        parts.push('<text class="sh-line" x="' + PAD + '" y="' + y.toFixed(1) +
-          '">Caps show what the key does; small text is what it emits.</text>');
+        line('Caps show what the key does; small text is what it emits.');
       }
       y += 10;
       parts.push(placedBoard(model, st, PAD, y, bs.w, bs.h));
