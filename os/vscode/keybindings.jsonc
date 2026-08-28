@@ -17,19 +17,29 @@
 //
 // `node tools/vscode-config.js` checks a real machine against this file.
 [
-  // ---- Panel focus quad (H J K L, right hand — the FOCUS domain).
+  // ---- Panel focus quad (J K L ;, right hand — the FOCUS domain).
   // No VS Code default exists for any of these four; confirmed against the
-  // built-in command IDs directly. Vim semantics: h=left, j=down, k=up,
-  // l=right, matching WM's place-half quad (PLAN.md 2026-08-25).
+  // built-in command IDs directly.
+  //
+  // The keys read `← ↑ ↓ →` left to right, the one directional order used
+  // by every quad on the board (PLAN.md 2026-08-28). Nothing in this file
+  // changed when they moved there from `H J K L` on 2026-08-25's vim
+  // ordering — the chord->command pairs below are what they always were,
+  // and only the keyboard layer decides which physical key sends which
+  // chord. So `f14`/`f15` look transposed against the physical order, and
+  // that is correct: it is what keeps the convention a firmware-only
+  // change with no keybindings.json re-merge on either machine.
   { "key": "ctrl+shift+f13", "command": "workbench.action.navigateLeft" },
   { "key": "ctrl+shift+f14", "command": "workbench.action.navigateDown" },
   { "key": "ctrl+shift+f15", "command": "workbench.action.navigateUp" },
   { "key": "ctrl+shift+f16", "command": "workbench.action.navigateRight" },
 
   // ---- Move-tab-to-pane quad + maximize toggle (A S D F + the outer key,
-  // left hand row2 — the MOVEMENT domain, a true physical mirror of the
-  // focus quad above). All five command IDs confirmed against the VS Code
-  // source; none ships a factory default, so nothing collides.
+  // left hand row2 — the MOVEMENT domain, the same `← ↑ ↓ →` order as the
+  // focus quad above, one row-half over). All five command IDs confirmed
+  // against the VS Code source; none ships a factory default, so nothing
+  // collides. Same note as above: `f14`/`f15` read transposed here too,
+  // for the same reason, and this file did not change on 2026-08-28.
   //
   // The chord bank matters: `LA(LS(Fn))` is deliberately NOT one the WM
   // daemons claim (bare / `LC` / `LA` / `LS`-alone `F13`-`F20`). Those are

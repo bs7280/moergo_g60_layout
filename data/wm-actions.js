@@ -22,24 +22,41 @@
  * This was free to do: the left hand was never constrained by anything —
  * Cursor's left hand does home-row mods + select macros, unrelated.
  *
- * **Revised 2026-08-25: place-half moved from `J K L ;` (31-34) to
- * `H J K L` (30-33), independently of Cursor/Cursor_macOS.** Both used to
- * read left-to-right as `← ↑ ↓ →` starting at `J` — not vim semantics,
- * just reading order, and the two layers shared that position purely
- * because it was convenient, not because the underlying idea matched. That
- * put WM at odds with the VSCode layer's `H J K L` quad, which uses REAL
- * vim semantics (`h`=left, `j`=down, `k`=up, `l`=right) — `J` meant "left"
- * on WM/Cursor and "down" on VS Code, a real muscle-memory trap. First fix
- * moved Cursor/Cursor_macOS's diamond too, to keep everything aligned; on
- * reflection that traded away something real — Cursor is a general
- * arrow/editing layer (and doubles for gaming), not a vim-navigation one,
- * so there was no matching mnemonic there to protect, and its `J K L ;`
- * had its own accumulated muscle memory. **Cursor/Cursor_macOS reverted to
- * `J K L ;`**; only WM's place-half (and the VSCode layer it's now
- * matching) use vim order. The two are simply independent now — no shared
- * position, no shared convention, each aligned with what actually needs it.
- * `K` (up) is still the same key in both WM's and Cursor's conventions,
- * pure coincidence.
+ * **Revised 2026-08-28: place-half is back on `J K L ;` (31-34), reading
+ * `← ↑ ↓ →` — and now so is every other directional quad on the board.**
+ * The 08-25 pass moved place-half to `H J K L` in vim order to match the
+ * VSCode layer, on the theory that vim's mapping was the mnemonic worth
+ * building muscle memory around. It isn't, here: there is no vim, no Vim
+ * extension, no `⌃W` habit anywhere in the toolchain — the vim
+ * alignment was aspirational, and it cost real consistency to hold.
+ *
+ * What it cost was visible on THIS layer, not across layers. The right
+ * hand carries two directional quads one row apart, and 08-25 changed only
+ * one of them:
+ *
+ *   row1 swap        `U I O P` (19-22)   ← ↑ ↓ →     untouched
+ *   row2 place-half  `H J K L`  (30-33)  ← ↓ ↑ →     vim, as of 08-25
+ *
+ * Same hand, adjacent rows, not column-aligned, and "up" was the 2nd key
+ * of one quad and the 3rd of the other. The left hand's focus quad
+ * (`A S D F`, 25-28) was `← ↑ ↓ →` all along too, so vim order was the odd
+ * one out on its own layer, matching nothing here and one quad elsewhere.
+ *
+ * So place-half moved one column right and swapped its middle two: swap
+ * and place-half are now column-aligned AND same-order, the whole layer
+ * reads one way, and it happens to agree with Cursor/Cursor_macOS and the
+ * VSCode layer as well. One rule for the whole board: **`←` `↑` `↓` `→`,
+ * left to right, on whichever four keys the quad occupies.** (Mouse and
+ * Keypad keep their inverted-T — a different shape, not a different order.)
+ *
+ * Chord assignments did NOT change — `F17`-`F20` still mean left/top/
+ * bottom/right to both daemons, only the key emitting each one moved. No
+ * daemon config, Hammerspoon script, or OS-side file needs touching for
+ * this; reflash and it's done. `F17`-`F20` now also run in numeric order
+ * left-to-right across the quad, which they didn't before.
+ *
+ * `K` (up) is at position 32 through all of this — it was the one key the
+ * two conventions always agreed on, and it never moved.
  *
  * Windows: a proven Python daemon (`RegisterHotKey` + `WM_HOTKEY`, no admin
  * needed) exposes directional window focus, window swap, resize, a stable
@@ -80,9 +97,9 @@
  *          by focus-monitor W/E
  *
  *   row2:  24   25  26  27  28   29     row2:  30  31  32  33  34   35
- *          (–)  ←   ↑   ↓   →    (G)          (H) ←   ↓   ↑   →    center
- *          focus-direction (moved            place-half — vim order,
- *          here from row1)                    independent of Cursor
+ *          (–)  ←   ↑   ↓   →    (G)          (H)  ←   ↑   ↓   →   center
+ *          focus-direction (moved            place-half — column-aligned
+ *          here from row1)                    under row1's swap quad
  *
  *   row3:  (magic) ws5 ws-un ws-show (–) (–)  row3:  (magic) wider narrower taller (–)
  *          Windows workspace overflow          resize
@@ -93,19 +110,20 @@
  *   51=minimize, 52=restore, 53=SE quadrant. Left hand's nav-row (48-50) is
  *   unused/spare.
  *
- * `G`(29) is still untouched `&trans` — inert either way, since it's the
- * key you're holding when you'd otherwise reach for it. `H`(30) is
- * DIFFERENT as of 2026-08-25: it now holds place-left (was `&trans`
- * through v2/v2.1). That's safe precisely because it's the OTHER hand's
- * hold key — holding `G` (left hand) to free the right hand, then
- * pressing `H` with that same right hand's index finger, is two different
- * fingers on two different physical switches, nothing self-referential
- * about it. It only goes inert if you enter via holding `H` itself
- * (right hand occupied holding the key down) — which is fine, since
- * holding `H` is for the LEFT hand's focus actions, not the right hand's
- * movement ones. Position 36 (Magic fallthrough) stays `&trans` for the
- * same reason as before — Magic must stay reachable by fallthrough from
- * inside the layer.
+ * `G`(29) and `H`(30) are both untouched `&trans` again — 08-25 briefly
+ * gave `H` place-left; the 08-28 shift handed it back. Both are inert by
+ * design: each is the key you're holding when you'd otherwise reach for
+ * it, so neither can carry content that's reachable from its own entry.
+ * Leaving both empty is the simpler invariant — no per-key reasoning
+ * about which entry path makes which binding live.
+ *
+ * The hold-`H` entry does put the right index on `H`, one column from
+ * `J`(←), so the movement quad is awkward to drive from that entry. Fine
+ * by design: holding `H` frees the LEFT hand, and the left hand's domain
+ * is focus, not movement. Reach movement via hold-`G` or the Magic latch.
+ *
+ * Position 36 (Magic fallthrough) stays `&trans` for the same reason as
+ * before — Magic must stay reachable by fallthrough from inside the layer.
  *
  * Minimize/restore aren't in either daemon's original action list — added
  * back here (dropping 2 of what would've been 4 extra place-quadrants)
@@ -157,14 +175,14 @@
     { key: 'LA(F13)', pos: 23, group: 'place', label: 'full', prompt: 'Fill the whole screen (not OS-native maximize)',
       mac: 'Hammerspoon → moveToUnit(full)', win: 'daemon → place region=full' },
 
-    // ------------------------------------------------- place: halves (repositioned 2026-08-25, see doc comment)
-    { key: 'F17', pos: 30, group: 'place', label: '←', prompt: 'Snap the window to the LEFT half',
+    // ------------------------------------------------- place: halves (repositioned 2026-08-28, see doc comment)
+    { key: 'F17', pos: 31, group: 'place', label: '←', prompt: 'Snap the window to the LEFT half',
       mac: 'Hammerspoon → moveToUnit(left-half)', win: 'native — Win+Left', winKey: 'LG(LEFT)' },
-    { key: 'F19', pos: 31, group: 'place', label: '↓', prompt: 'Snap the window to the BOTTOM half',
-      mac: 'Hammerspoon → moveToUnit(bottom-half)', win: 'native — Win+Down', winKey: 'LG(DOWN)' },
     { key: 'F18', pos: 32, group: 'place', label: '↑', prompt: 'Snap the window to the TOP half',
       mac: 'Hammerspoon → moveToUnit(top-half)', win: 'native — Win+Up', winKey: 'LG(UP)' },
-    { key: 'F20', pos: 33, group: 'place', label: '→', prompt: 'Snap the window to the RIGHT half',
+    { key: 'F19', pos: 33, group: 'place', label: '↓', prompt: 'Snap the window to the BOTTOM half',
+      mac: 'Hammerspoon → moveToUnit(bottom-half)', win: 'native — Win+Down', winKey: 'LG(DOWN)' },
+    { key: 'F20', pos: 34, group: 'place', label: '→', prompt: 'Snap the window to the RIGHT half',
       mac: 'Hammerspoon → moveToUnit(right-half)', win: 'native — Win+Right', winKey: 'LG(RIGHT)' },
     { key: 'LA(F14)', pos: 35, group: 'place', label: 'center', prompt: 'Center the window without maximizing it',
       mac: 'Hammerspoon → moveToUnit(center, 70%)', win: 'daemon → place region=center' },

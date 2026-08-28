@@ -1197,7 +1197,7 @@
             bindings = <
  &to LAYER_HRM_macOS       &trans       &trans       &trans       &trans  &trans                                                                  &trans       &trans       &trans       &trans       &trans       &trans
          &kp LS(F15)  &kp LS(F13)  &kp LA(F19)  &kp LA(F20)  &kp LS(F14)  &trans                                                                  &trans  &kp LC(F13)  &kp LC(F14)  &kp LC(F15)  &kp LC(F16)  &kp LA(F13)
-              &trans      &kp F13      &kp F14      &kp F15      &kp F16  &trans                                                                  &kp F17      &kp F19      &kp F18      &kp F20       &trans  &kp LA(F14)
+              &trans      &kp F13      &kp F14      &kp F15      &kp F16  &trans                                                                   &trans      &kp F17      &kp F18      &kp F19      &kp F20  &kp LA(F14)
               &trans       &trans       &trans       &trans       &trans  &trans                                                                  &trans  &kp LC(F17)  &kp LC(F18)  &kp LC(F19)  &kp LC(F20)  &kp LA(F15)
                                         &trans       &trans       &trans                                                                                  &kp LA(F16)  &kp LA(F17)  &kp LA(F18)
                                                                                   &trans  &trans  &tog LAYER_WM_practice  &trans  &trans  &trans
@@ -1208,7 +1208,7 @@
             bindings = <
  &to LAYER_HRM_WinLinx      &kp F21      &kp F22      &kp F23      &kp F24  &kp LC(F21)                                                             &kp LC(F22)   &kp LA(F21)  &kp LA(F22)   &kp LA(F23)    &kp LA(F24)  &kp LC(F23)
            &kp LS(F15)  &kp LS(F13)  &kp LA(F19)  &kp LA(F20)  &kp LS(F14)       &trans                                                                  &trans   &kp LC(F13)  &kp LC(F14)   &kp LC(F15)    &kp LC(F16)  &kp LA(F13)
-                &trans      &kp F13      &kp F14      &kp F15      &kp F16       &trans                                                            &kp LG(LEFT)  &kp LG(DOWN)   &kp LG(UP)  &kp LG(RIGHT)         &trans  &kp LA(F14)
+                &trans      &kp F13      &kp F14      &kp F15      &kp F16       &trans                                                                 &trans  &kp LG(LEFT)    &kp LG(UP)   &kp LG(DOWN)  &kp LG(RIGHT)  &kp LA(F14)
                 &trans  &kp LC(F24)  &kp LS(F23)  &kp LS(F24)       &trans       &trans                                                                  &trans   &kp LC(F17)  &kp LC(F18)   &kp LC(F19)    &kp LC(F20)  &kp LA(F15)
                                           &trans       &trans       &trans                                                                                       &kp LG(DOWN)   &kp LG(UP)   &kp LA(F18)
                                                                                          &trans  &trans  &tog LAYER_WM_Win  &trans  &trans  &trans
@@ -1219,7 +1219,7 @@
             bindings = <
           &trans           &trans           &trans           &trans         &trans             &trans                                                           &trans            &trans            &trans           &trans     &trans  &trans
     &kp LG(BSLH)          &kp LA(K)           &trans           &trans  &kp LG(LS(T))      &kp LC(GRAVE)                                                           &trans  &kp LG(LS(LBKT))  &kp LG(LS(RBKT))      &kp LC(TAB)     &trans  &trans
- &kp LA(LS(F17))  &kp LA(LS(F13))  &kp LA(LS(F14))  &kp LA(LS(F15))  &kp LA(LS(F16))  &kp LC(LS(GRAVE))                                                  &kp LC(LS(F13))   &kp LC(LS(F14))   &kp LC(LS(F15))  &kp LC(LS(F16))  &kp LC(R)  &trans
+ &kp LA(LS(F17))  &kp LA(LS(F13))  &kp LA(LS(F15))  &kp LA(LS(F14))  &kp LA(LS(F16))  &kp LC(LS(GRAVE))                                                    &kp LC(R)  &kp LC(LS(F13))  &kp LC(LS(F15))  &kp LC(LS(F14))  &kp LC(LS(F16))  &trans
           &trans           &trans           &trans  &kp LG(LS(ESC))     &kp LG(ESC)        &kp LS(F19)                                                           &trans            &trans            &trans           &trans     &trans  &trans
                                             &trans           &trans         &trans                                                                                                &trans            &trans           &trans
                                                                                                        &trans  &trans  &trans  &trans  &trans  &trans
@@ -1230,7 +1230,7 @@
             bindings = <
           &trans           &trans           &trans           &trans         &trans             &trans                                                           &trans           &trans           &trans           &trans     &trans  &trans
     &kp LC(BSLH)          &kp LA(K)           &trans           &trans  &kp LC(LS(T))      &kp LC(GRAVE)                                                           &trans    &kp LC(PG_UP)    &kp LC(PG_DN)      &kp LC(TAB)     &trans  &trans
- &kp LA(LS(F17))  &kp LA(LS(F13))  &kp LA(LS(F14))  &kp LA(LS(F15))  &kp LA(LS(F16))  &kp LC(LS(GRAVE))                                                  &kp LC(LS(F13))  &kp LC(LS(F14))  &kp LC(LS(F15))  &kp LC(LS(F16))  &kp LC(R)  &trans
+ &kp LA(LS(F17))  &kp LA(LS(F13))  &kp LA(LS(F15))  &kp LA(LS(F14))  &kp LA(LS(F16))  &kp LC(LS(GRAVE))                                                  &kp LC(R)  &kp LC(LS(F13))  &kp LC(LS(F15))  &kp LC(LS(F14))  &kp LC(LS(F16))  &trans
           &trans           &trans           &trans      &kp LS(F18)      &kp LS(F17)        &kp LS(F19)                                                           &trans           &trans           &trans           &trans     &trans  &trans
                                             &trans           &trans         &trans                                                                                               &trans           &trans           &trans
                                                                                                        &trans  &trans  &trans  &trans  &trans  &trans

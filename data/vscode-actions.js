@@ -21,21 +21,44 @@
  * would just be pure duplication for no benefit).
  *
  * Physical split (2026-08-24, matches PLAN.md §WM redesign v2.1's
- * focus/movement split): right hand (H/J/K/L, row2, unchanged since
- * 2026-08-23) = FOCUS — which panel has attention. Left hand row2
- * (A/S/D/F, positions 25-28) = MOVEMENT — move the current tab, or resize
- * the layout by maximizing/restoring the focused group. **Revised
- * 2026-08-25**: the movement quad first shipped on row1 (12-15), offset
- * one row from H/J/K/L — reported as confusing precisely because it wasn't
- * a true mirror. Moved to row2-left (25-28), the actual mirror image of
- * H/J/K/L's row2-right, displacing two pre-existing one-off bindings
- * (split-editor, the undocumented Alt+K) to the now-free row1 slots
- * (12/13). Everything else on the layer (editor/terminal/Claude commands)
- * rides VS Code's own defaults or a handful of one-off custom chords,
- * unrelated to the focus/movement split.
+ * focus/movement split): right hand row2 (`J K L ;`, positions 31-34) =
+ * FOCUS — which panel has attention. Left hand row2 (`A S D F`, positions
+ * 25-28) = MOVEMENT — move the current tab, or resize the layout by
+ * maximizing/restoring the focused group. The movement quad first shipped
+ * on row1 (12-15), a row offset from the focus quad and reported as
+ * confusing for exactly that reason; 2026-08-25 moved it to row2-left,
+ * displacing two pre-existing one-off bindings (split-editor, the
+ * undocumented Alt+K) to the now-free row1 slots (12/13).
+ *
+ * **Revised 2026-08-28: both quads read `← ↑ ↓ →`, and the focus quad
+ * moved from `H J K L` (30-33) to `J K L ;` (31-34).** They used to read
+ * `← ↓ ↑ →` — vim order — on the theory that this layer's whole point was
+ * mirroring vim's `⌃W` window model. That justification doesn't hold up:
+ * there's no vim, no Vim extension, and no `⌃W` habit anywhere in this
+ * toolchain (see os/vscode/ — nothing vim-related is installed), so the
+ * quad was reproducing a keybinding you never press. Meanwhile it
+ * disagreed with Cursor/Cursor_macOS's arrow diamond and with WM's own
+ * row1 swap quad, both of which have always been `← ↑ ↓ →`.
+ *
+ * One rule now covers every directional quad on the board: **`←` `↑` `↓`
+ * `→`, left to right, on whichever four keys the quad occupies.** Cursor's
+ * diamond is untouched and always was the reference; WM and VS Code came
+ * to it. See data/wm-actions.js for the WM half.
+ *
+ * Chord->command assignments did NOT change — `LC(LS(F13))` is still
+ * navigateLeft, `LC(LS(F14))` still navigateDown, and so on, which is why
+ * `F14`/`F15` now appear "out of order" reading the keymap left to right.
+ * That was deliberate: it keeps this a firmware-only change, so
+ * os/vscode/keybindings.jsonc is unchanged and neither machine needs its
+ * keybindings.json re-merged. Reflash and it's done.
+ *
+ * `LC(R)` (openRecent) moved to the freed `H` (30); it was on `;` (34),
+ * which the focus quad now needs. Everything else on the layer
+ * (editor/terminal/Claude commands) rides VS Code's own defaults or a
+ * handful of one-off custom chords, unrelated to the focus/movement split.
  *
  * Chord provenance:
- *  - `LC(LS(F13-16))` (H J K L, focus quad) and `LS(F19)` (terminal
+ *  - `LC(LS(F13-16))` (J K L ;, focus quad) and `LS(F19)` (terminal
  *    profile picker) were custom-assigned 2026-08-23 because VS Code ships
  *    no default for those specific commands — see os/vscode/keybindings.jsonc.
  *  - `LA(LS(F13-17))` (move-tab quad + maximize) — same reasoning, added
@@ -61,13 +84,13 @@
 (function (root) {
   root.G80_VSCODE_ACTIONS = [
     // ==================================================== RIGHT hand — focus domain
-    { key: 'LC(LS(F13))', pos: 30, group: 'focus', label: '←', prompt: 'Focus the panel to your LEFT',
+    { key: 'LC(LS(F13))', pos: 31, group: 'focus', label: '←', prompt: 'Focus the panel to your LEFT',
       command: 'workbench.action.navigateLeft' },
-    { key: 'LC(LS(F14))', pos: 31, group: 'focus', label: '↓', prompt: 'Focus the panel BELOW',
-      command: 'workbench.action.navigateDown' },
     { key: 'LC(LS(F15))', pos: 32, group: 'focus', label: '↑', prompt: 'Focus the panel ABOVE',
       command: 'workbench.action.navigateUp' },
-    { key: 'LC(LS(F16))', pos: 33, group: 'focus', label: '→', prompt: 'Focus the panel to your RIGHT',
+    { key: 'LC(LS(F14))', pos: 33, group: 'focus', label: '↓', prompt: 'Focus the panel BELOW',
+      command: 'workbench.action.navigateDown' },
+    { key: 'LC(LS(F16))', pos: 34, group: 'focus', label: '→', prompt: 'Focus the panel to your RIGHT',
       command: 'workbench.action.navigateRight' },
 
     // ==================================================== LEFT hand — movement domain (added 2026-08-24, repositioned 2026-08-25)
@@ -75,10 +98,10 @@
       command: 'workbench.action.toggleMaximizeEditorGroup' },
     { key: 'LA(LS(F13))', pos: 25, group: 'movement', label: '←', prompt: 'Move the current tab into the pane to your LEFT',
       command: 'workbench.action.moveEditorToLeftGroup' },
-    { key: 'LA(LS(F14))', pos: 26, group: 'movement', label: '↓', prompt: 'Move the current tab into the pane BELOW',
-      command: 'workbench.action.moveEditorToBelowGroup' },
-    { key: 'LA(LS(F15))', pos: 27, group: 'movement', label: '↑', prompt: 'Move the current tab into the pane ABOVE',
+    { key: 'LA(LS(F15))', pos: 26, group: 'movement', label: '↑', prompt: 'Move the current tab into the pane ABOVE',
       command: 'workbench.action.moveEditorToAboveGroup' },
+    { key: 'LA(LS(F14))', pos: 27, group: 'movement', label: '↓', prompt: 'Move the current tab into the pane BELOW',
+      command: 'workbench.action.moveEditorToBelowGroup' },
     { key: 'LA(LS(F16))', pos: 28, group: 'movement', label: '→', prompt: 'Move the current tab into the pane to your RIGHT',
       command: 'workbench.action.moveEditorToRightGroup' },
 
@@ -93,7 +116,7 @@
       command: 'workbench.action.showAllEditorsByMostRecentlyUsed (was quickOpenPreviousRecentlyUsedEditor — see os/vscode/keybindings.jsonc for why)' },
     { key: 'LG(BSLH)', winKey: 'LC(BSLH)', pos: 12, group: 'editor', label: 'split', prompt: 'Split the editor',
       command: 'workbench.action.splitEditor' },
-    { key: 'LC(R)', pos: 34, group: 'editor', label: 'recent', prompt: 'Open a recently opened file, folder, or workspace',
+    { key: 'LC(R)', pos: 30, group: 'editor', label: 'recent', prompt: 'Open a recently opened file, folder, or workspace',
       command: 'workbench.action.openRecent' },
 
     // ------------------------------------------------------------- terminal

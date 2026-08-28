@@ -241,6 +241,62 @@ matching VS Code — the two are simply independent conventions now, no
 longer sharing a position or a reason to. `data/wm-actions.js`'s doc
 comment updated to stop calling place-half "Cursor-aligned."
 
+**v2.3 (2026-08-28): one directional order for the whole board — `← ↑ ↓ →`,
+left to right, on every quad.** v2.2 moved WM's place-half to vim order to
+match the VS Code layer; v2.3 moves both of them the other way instead, onto
+the order `Cursor`/`Cursor_macOS` have always used. Two things settled it.
+
+First, the vim justification was hollow. The VS Code quad existed to mirror
+vim's `⌃W h/j/k/l` — but there is no vim, no Vim extension, and no `⌃W` habit
+anywhere in this toolchain (`os/vscode/` contains nothing vim-related, and
+`tools/vscode-config.js` reports both installed editors clean without it). The
+layer was reproducing a keybinding that is never pressed, and charging real
+consistency for it.
+
+Second, and worse, v2.2 left the WM layer disagreeing with itself. The right
+hand carries two directional quads one row apart, and only one of them moved:
+
+| | keys | order |
+|---|---|---|
+| row1 — swap | `U I O P` (19-22) | `← ↑ ↓ →` |
+| row2 — place-half | `H J K L` (30-33) | `← ↓ ↑ →` (v2.2) |
+
+Same hand, adjacent rows, not column-aligned, and "up" was the 2nd key of one
+quad and the 3rd of the other. The left hand's focus quad (`A S D F`, 25-28)
+was `← ↑ ↓ →` all along too, so after v2.2 vim order matched nothing on its
+own layer and exactly one quad elsewhere. §WM redesign v2.1 had already called
+this ("The tile row is `← ↑ ↓ →`, **not** vim order... Changing it means
+changing all of them, not just this layer") — v2.2 changed one of them.
+
+**What moved.** Both right-hand quads shift one column right and swap their
+middle two: WM place-half and VS Code panel-focus go from `H J K L` (30-33) to
+`J K L ;` (31-34). VS Code's left-hand move-tab quad stays on `A S D F` and
+swaps its middle two to match. `K`(32) = `↑` never moved — the one key both
+conventions always agreed on. Position 34 was `&trans` on both WM layers, so
+nothing was displaced there; on the VS Code layers `LC(R)` (openRecent) moved
+off `;` onto the freed `H`(30). `G`(29) and `H`(30) are both inert `&trans` on
+WM again, which restores the simpler invariant — neither hold key carries
+content, so there is no per-entry-path reasoning about which binding is live.
+
+**Firmware-only, by construction.** Chord->action assignments were left
+exactly as they were: `F17`-`F20` still mean left/top/bottom/right to both WM
+daemons, `LC(LS(F13))` is still `navigateLeft`, and so on. Only which physical
+key emits which chord changed. So no Hammerspoon script, no Windows daemon
+config, and no `keybindings.json` on either machine needs touching — reflash
+and it is done. The visible cost is that `F14`/`F15` now read transposed
+against physical order in the VS Code layer rows; that is deliberate and noted
+in both `os/vscode/keybindings.jsonc` and `data/vscode-actions.js`. (WM got
+lucky in the other direction: `F17`-`F20` now run in numeric order across the
+quad, which they did not before.)
+
+Verified: keymap re-parses clean (21 layers, 19 combos), positions 31/32/33/34
+now read `←`/`↑`/`↓`/`→` identically on `Cursor`, `Cursor_macOS`, `WM_practice`,
+`WM_Win`, `VSCode_macOS` and `VSCode_Win`, and `tools/vscode-config.js` still
+reports both editors clean — confirming nothing on the OS side moved.
+
+The board's one remaining exception is deliberate: `Mouse`/`Keypad` keep their
+inverted-T. That is a different *shape*, not a different order.
+
 ## The idea — three tiers collapsed to one
 
 The original plan was three layers emitting three different things, because
@@ -350,7 +406,8 @@ one-spatial-map principle the whole layer exists to uphold. Flip `MODE` in
 
 The tile row is `← ↑ ↓ →`, **not** vim order — it matches the `Cursor` /
 `Cursor_macOS` layers' existing arrows on 31–34, and the Mouse layer agrees.
-Changing it means changing all of them, not just this layer.
+Changing it means changing all of them, not just this layer. (v2.2 changed
+one of them anyway; v2.3 changed them all back. See the v2.3 entry above.)
 
 **CORRECTION.** An earlier finding claimed the `Cursor` layer "mirrors 10
 actions across both hands," and used that as precedent. It doesn't. Its left
@@ -766,9 +823,10 @@ Design rules that survived four revisions:
 - **Defaults-first.** Wherever VS Code or the Claude extension ships a chord,
   the layer emits it (per-OS variants, the `Cursor`/`Cursor_macOS` pattern).
   Muscle memory then still works on a bare laptop.
-- **Right hand nav, left hand state change.** `H J K L` = directional panel
-  focus (vim `⌃W` model; `navigateLeft/Down/Up/Right`, which VS Code ships
-  unbound — 4 custom chords). `U/I` ride `⌘⇧[`/`]` and `⌃PgUp/PgDn`, which are
+- **Right hand nav, left hand state change.** `J K L ;` = directional panel
+  focus, reading `← ↑ ↓ →` (`navigateLeft/Up/Down/Right`, which VS Code ships
+  unbound — 4 custom chords). Shipped on `H J K L` in vim order; moved
+  2026-08-28, see the v2.3 entry. `U/I` ride `⌘⇧[`/`]` and `⌃PgUp/PgDn`, which are
   context-smart: editor tabs normally, terminal tabs when the terminal is
   focused.
 - **Teams can't rebind**, so its layer emits real chords; base-layer arrows
