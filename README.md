@@ -157,6 +157,35 @@ column each, showing what that layer actually emits at that position plus what
 you still have to configure. The twin is found by position overlap and binding
 density, not by name, so a third one would appear on its own.
 
+## Per-OS twins, and the two layers that never had one
+
+Layers that emit OS-specific chords come in pairs — `Cursor`/`Cursor_macOS`,
+`WM_practice`/`WM_Win`, `VSCode_macOS`/`VSCode_Win` — picked by whichever
+base layer is up.
+
+`Keypad` and `Mouse` didn't. Both are single layers that *both* bases reach,
+and both carry hardcoded `LG(...)` clipboard keys straight out of the
+original TailorKey export: `⌘Z ⌘X ⌘C ⌘V ⇧⌘V` on Keypad, `⌘X ⌘C ⌘V` on Mouse.
+On Windows those are Win+Z, Win+X, Win+C and Win+V — Snap Layouts, the Quick
+Link menu, Copilot and clipboard history, none of which edit anything.
+
+The fix is two `zmk,conditional-layers` overlays, `Keypad_Win` (19) and
+`Mouse_Win` (20), `&trans` everywhere except those nine keys. They come up on
+their own whenever the Windows base *and* Keypad/Mouse are both active, so
+they cost 9 bindings instead of two duplicated 60-key layers.
+
+Twin layers wouldn't have worked for Mouse. Both cirque listeners hardcode
+`zip_temp_layer LAYER_Mouse`, so touching a trackpad raises layer 9 whichever
+base is up — a twin hung off the Windows thumb key would fix the thumb path
+and leave the trackpad path still sending ⌘. A conditional layer watches
+layer *state*, so it covers both ways in.
+
+The sheets know about them, because a layer nothing can press is exactly the
+kind of thing that goes stale silently: the **IN** line reads `automatic with
+HRM_WinLinx + Keypad`, `&trans` ghosts resolve against the layers that
+trigger the overlay rather than by raw index, and `Keypad`, `Mouse` and
+`HRM_WinLinx` each say which overlay replaces how many of their keys.
+
 ## VS Code / apps sheet, and the config behind it
 
 `vscode.html` is the same join for the two VS Code layers (`VSCode_macOS`,

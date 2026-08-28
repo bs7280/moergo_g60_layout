@@ -66,7 +66,22 @@
    * binding, ending at the base layer.
    */
   function resolveTrans(model, layerIdx, keyIdx) {
-    for (var l = layerIdx - 1; l >= 0; l--) {
+    // A conditional layer is never up on its own — it appears on top of the
+    // layers that triggered it, so those are what its `&trans` keys actually
+    // fall through to. Walking down by raw index would show the caps of
+    // layers it can never coexist with, which is exactly the confident-and-
+    // wrong picture the ghost is supposed to prevent.
+    var start = layerIdx - 1;
+    var conds = (model.conditional || []).filter(function (c) {
+      return c.thenLayer === layerIdx;
+    });
+    if (conds.length) {
+      start = -1;
+      conds.forEach(function (c) {
+        c.ifLayers.forEach(function (l) { if (l < layerIdx && l > start) start = l; });
+      });
+    }
+    for (var l = start; l >= 0; l--) {
       var b = model.layers[l][keyIdx];
       if (b && b.trim() !== '&trans') return { binding: b, layer: l };
     }

@@ -903,6 +903,67 @@ consulted, so defaults-first is not merely inconvenient there, it's
 impossible — which is exactly why `LS(F17)`/`LS(F18)` were reserved for
 this back on 2026-08-24, and now there's a written reason attached.
 
+**Keypad and Mouse were macOS-only, 2026-08-28.** Noticed while looking at
+the Cursor layer, which turned out to be the one place this *is* handled —
+`Cursor` is all `LC(...)`, `Cursor_macOS` all `LG(...)`, each hung off its
+own base. Its lone `LG(D)` is Win+D / Show Desktop, whose mac twin is
+`LG(F3)`; deliberate.
+
+`Keypad` (8) and `Mouse` (9) never got a twin. One layer each, reached from
+both bases, with `LG(...)` clipboard keys straight out of the original
+TailorKey export (`git log -S` puts them in `4b2e9c7`, the first import —
+TailorKey ships an OS twin for Cursor only):
+
+| layer | positions | emits | on Windows |
+| --- | --- | --- | --- |
+| Keypad | 37-41 | `⌘Z ⌘X ⌘C ⌘V ⇧⌘V` | Snap Layouts · Quick Link menu · Copilot · clipboard history · cycle notifications |
+| Keypad | 25 | `⌘⇧Y` | nothing |
+| Mouse | 48-50 | `⌘X ⌘C ⌘V` | Quick Link menu · Copilot · clipboard history |
+
+Mouse is the worse of the two: `&cirque_{lh,rh}_listener` carry
+`zip_temp_layer LAYER_Mouse 250`, so pointer motion raises layer 9 on its
+own — those three keys are live whenever a hand is on a pad, not only while
+the thumb key is held.
+
+**Fixed with `zmk,conditional-layers`, not twin layers.** `Keypad_Win` (19)
+and `Mouse_Win` (20) are `&trans` at every position except the nine, and a
+`conditional_layers` node raises each one whenever `HRM_WinLinx` and its
+partner layer are both active. Nine real bindings rather than 120.
+
+Twins were considered and rejected on the Mouse case specifically: the two
+listeners hardcode `LAYER_Mouse`, so a twin selected from the Windows thumb
+key fixes the thumb path and leaves the trackpad path sending ⌘ anyway.
+Rewriting the listeners just moves the breakage to macOS. A conditional
+layer keys off layer *state*, so it covers both entry paths. One shared
+overlay for both wasn't possible either — Keypad's clipboard positions
+(25, 37-41) are Mouse's scroll and MouseSlow/Warp/Fast holds, and Mouse's
+(48-50) are Keypad's `&trans` arrows.
+
+Redo on the overlay is `LC(Y)`, matching what `layer_Cursor` already uses on
+this OS. **Still open: the macOS side of Keypad 25 is `LG(LS(Y))`, which is
+redo on neither OS** (mac is `⇧⌘Z`, Windows `Ctrl+Y`); it looks like a
+mechanical mac-ification of `Ctrl+Shift+Y` in the TailorKey export. Left
+alone pending a decision on what that key should be.
+
+**Tooling followed, because a layer no key can reach is exactly what goes
+stale silently.** `js/parse.js` gained `extractConditionalLayers()` (located
+by the `compatible` string, not the node name) and puts them on the model as
+`conditional`. `js/sheet.js` gained `condDoors()` — without it both overlays
+printed with no IN line at all, which reads as "unreachable" rather than
+"automatic" — and `overlayNote()`, which makes `Keypad`, `Mouse` and
+`HRM_WinLinx` say which overlay replaces how many of their keys.
+`js/render.js`'s `resolveTrans()` now starts a conditional layer's
+fallthrough walk at its highest if-layer: by raw index the overlays' ghosts
+resolved against `WM_Win`, showing F21-F24 caps for layers that can never
+coexist with it — a confident, wrong picture of exactly the kind the
+undefined-behaviour check exists to prevent. That fix lands in the
+interactive viewer's Ghost toggle too.
+
+Verified: 21 layers parse and validate clean, `tools/firmware-sync.js` is
+happy, `tools/bake.js` and `tools/cheatsheet.js` regenerated, and the
+overlays' ghosts now read `F1 F2 F3 …` (Keypad) and the mouse arrows
+(Mouse). **Not yet flashed** — needs `tools/flash.sh` after CI builds.
+
 ## Open questions
 
 - [ ] Is `LALT` on both ring fingers deliberate? Every other right-hand mod uses

@@ -198,6 +198,30 @@
   }
 
   /*
+   * Conditional layers have no door in the binding sense — nothing you can
+   * press enters one; `zmk,conditional-layers` raises it whenever a set of
+   * other layers are all active. doors() scans bindings, so without this the
+   * section prints with no IN line at all, which reads as "unreachable"
+   * rather than "automatic".
+   */
+  function condDoors(model, li) {
+    return (model.conditional || [])
+      .filter(function (c) { return c.thenLayer === li; })
+      .map(function (c) {
+        var names = c.ifLayers.map(function (l) {
+          return model.layerNames[l] || l;
+        }).join(' + ');
+        var note = 'conditional layer — no key enters it';
+        return {
+          text: 'automatic with ' + names + ' (' + note + ')',
+          spans: '<tspan class="sh-verb">automatic</tspan>' +
+            '<tspan class="sh-b"> with ' + esc(names) + '</tspan>' +
+            '<tspan class="sh-faint"> (' + esc(note) + ')</tspan>'
+        };
+      });
+  }
+
+  /*
    * The trackpads are a door too — `zip_temp_layer` on the cirque listeners
    * is how Mouse is *actually* entered most of the time, and doors() only
    * reads layer bindings, so without this the Mouse section claims the only
@@ -403,6 +427,10 @@
     ((model.pointer && model.pointer.autoLayer) || []).forEach(function (a) {
       seen[a.layer] = true;
     });
+    // A conditional layer is reached by layer state, never by a binding, so
+    // an all-`&trans` one would otherwise be dropped as dead — the same way
+    // MouseSlow/Fast/Warp once were.
+    (model.conditional || []).forEach(function (c) { seen[c.thenLayer] = true; });
     return seen;
   }
 
@@ -506,7 +534,8 @@
           var self = e.d.kind === 'toggle' && e.d.target === li;
           return doorSpan(model, e, dir, self);
         });
-        if (dir === 'in') items = padDoors(model, li).concat(comboDoors(model, li), items);
+        if (dir === 'in') items = condDoors(model, li)
+          .concat(padDoors(model, li), comboDoors(model, li), items);
         if (!items.length) return;
         // Gutter label on the first line only — a second "OUT" under the
         // first reads as a second list rather than a wrap.
@@ -553,11 +582,34 @@
       speedBlock(li, from);
     }
 
+    /*
+     * The other end of condDoors: this layer is one of the conditions, so
+     * some of the caps drawn below are overridden when the rest of the
+     * condition holds. Without the note the board reads as the whole truth,
+     * which for Keypad/Mouse would mean showing the macOS clipboard chords
+     * to someone on Windows.
+     */
+    function overlayNote(li) {
+      (model.conditional || []).forEach(function (c) {
+        if (c.ifLayers.indexOf(li) < 0) return;
+        var others = c.ifLayers.filter(function (l) { return l !== li; })
+          .map(function (l) { return model.layerNames[l] || l; }).join(' + ');
+        var n = boundCount(model.layers[c.thenLayer]);
+        line('<tspan class="sh-faint">With </tspan>' +
+          '<tspan class="sh-b">' + esc(others) + '</tspan>' +
+          '<tspan class="sh-faint"> also active, </tspan>' +
+          '<tspan class="sh-tgt">' + c.thenLayer + ' · ' +
+          esc(model.layerNames[c.thenLayer] || c.thenLayer) + '</tspan>' +
+          '<tspan class="sh-faint"> replaces ' + n + ' of these keys.</tspan>');
+      });
+    }
+
     function layerSection(li) {
       if (!boundCount(model.layers[li])) return variantSection(li);
       section(model.layerNames[li] || 'layer ' + li, li);
       doorBlock(li);
       speedBlock(li, null);
+      overlayNote(li);
       var st = { board: BOARD(), layer: li, os: osOf(model.layerNames[li]), showTrans: true };
       if (legendsByLayer[li]) {
         st.legends = legendsByLayer[li];

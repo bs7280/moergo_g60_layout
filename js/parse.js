@@ -16,6 +16,8 @@
  *     defines:    { NAME: value },
  *     behaviors:  { name: {...} },
  *     combos:     [{name, desc, binding, keys, layers, timeoutMs}],
+ *     conditional:[{name, ifLayers, thenLayer}]   // .keymap only
+ *     pointer:    { speeds, autoLayer },
  *     warnings:   string[]
  *   }
  */
@@ -312,6 +314,61 @@
   };
 
   /**
+   * `zmk,conditional-layers` — a layer that comes up on its own whenever a
+   * set of other layers are all active. Nothing you can press enters one, so
+   * anything that finds doors by scanning bindings (wmjoin.doors, the sheet)
+   * finds nothing at all and shows the layer as unreachable. This is the only
+   * way to know they exist.
+   *
+   * Located by the `compatible` string rather than the node name, since the
+   * node name is arbitrary; the enclosing `{` is the last one before it,
+   * which holds as long as `compatible` is the node's first property (it is
+   * in every ZMK example, and a devicetree node that led with a child would
+   * be strange).
+   *
+   * @returns {Array<{name, ifLayers: number[], thenLayer: number}>}
+   */
+  function extractConditionalLayers(src, defines) {
+    var clean = stripComments(src);
+    var out = [];
+
+    function layerNum(tok) {
+      var v = /^\d+$/.test(tok) ? tok : (defines && defines[tok]);
+      return v != null && /^\d+$/.test(String(v)) ? parseInt(v, 10) : null;
+    }
+
+    var re = /compatible\s*=\s*"zmk,conditional-layers"\s*;/g;
+    var m;
+    while ((m = re.exec(clean)) !== null) {
+      var open = clean.lastIndexOf('{', m.index);
+      if (open < 0) continue;
+      var blk = braceBlock(clean, open);
+      if (!blk) continue;
+      var body = clean.slice(blk.start, blk.end);
+
+      var childRe = /([A-Za-z_][\w-]*)\s*\{/g;
+      var c;
+      while ((c = childRe.exec(body)) !== null) {
+        var cb = braceBlock(body, c.index + c[0].length - 1);
+        if (!cb) continue;
+        var cbody = body.slice(cb.start, cb.end);
+        childRe.lastIndex = cb.end;
+
+        var ifm = /if-layers\s*=\s*<([^>]*)>/.exec(cbody);
+        var thm = /then-layer\s*=\s*<?\s*([A-Za-z_]\w*|\d+)\s*>?/.exec(cbody);
+        if (!ifm || !thm) continue;
+
+        var ifs = ifm[1].trim().split(/\s+/).filter(Boolean).map(layerNum);
+        var then = layerNum(thm[1]);
+        if (then == null || !ifs.length ||
+          ifs.some(function (v) { return v == null; })) continue;
+        out.push({ name: c[1], ifLayers: ifs, thenLayer: then });
+      }
+    }
+    return out;
+  }
+
+  /**
    * Pointer gains and pad-activated layers, read off the input listeners.
    * @returns {{speeds: object, autoLayer: Array}} speeds is layer index ->
    *   { move|scroll|padLeft|padRight: [numerator, denominator] }.
@@ -430,6 +487,7 @@
       behaviors: behaviors,
       combos: combos,
       pointer: extractPointerSpeeds(src, defines),
+      conditional: extractConditionalLayers(src, defines),
       warnings: warnings,
       errors: errors
     };
@@ -669,6 +727,7 @@
     extractCombos: extractCombos,
     extractDefines: extractDefines,
     extractPointerSpeeds: extractPointerSpeeds,
+    extractConditionalLayers: extractConditionalLayers,
     bindingToString: bindingToString
   };
 });
