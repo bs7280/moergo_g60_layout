@@ -6,9 +6,10 @@ carries forward only what's still true. Where the original was wrong, the
 correction is marked **CORRECTION** rather than quietly rewritten — the reasoning
 is usually the useful part.
 
-Last updated 2026-08-24. **WM redesign v2 shipped on the keyboard side only
-— see §WM redesign v2 below, which supersedes most of what follows in this
-file about `WM_practice`/`WM_Win`.** Everything under "The idea" through
+Last updated 2026-08-29. **WM redesign v2 shipped on the keyboard side, and
+the macOS Hammerspoon daemon now exists and is installed — see §WM redesign
+v2 below, which supersedes most of what follows in this file about
+`WM_practice`/`WM_Win`.** Everything under "The idea" through
 "Not built yet" is v1 history, kept for the reasoning, not as current state.
 
 Flash: `layouts/TailorKey v4.2m⁶ +wm-redesign.json`
@@ -296,6 +297,64 @@ reports both editors clean — confirming nothing on the OS side moved.
 
 The board's one remaining exception is deliberate: `Mouse`/`Keypad` keep their
 inverted-T. That is a different *shape*, not a different order.
+
+**Hammerspoon daemon shipped (2026-08-29).** `os/wm/mac/init.lua` — all 27
+macOS actions from `data/wm-actions.js`, installed and live on the Mac.
+Focus/swap/cycle are the hand-rolled port as planned (pure functions over
+plain frame tables, so `WM.selftest()` exercises them against a synthetic
+two-monitor layout with no windows and no Accessibility — 11 checks).
+Loaded from a thin `~/.hammerspoon/init.lua` (vendored in
+`os/wm/README.md`) that also loads the host-switch listener — which had
+never actually been wired up on this Mac despite the binary sitting in
+`~/bin` — and `hs.ipc`, so `~/bin/hs -c '...'` gives future sessions a
+headless verify loop.
+
+Decisions a future reader might re-litigate: cycle is **non-wrapping**
+(`WRAP_CYCLE` flag to flip) per the "reversible, non-wrapping" spec above,
+though the Windows daemon should be checked when it lands here; resize step
+is 5% of the screen dimension about the window's own center, floored at
+200×150 so repeated shrinks can't lose the window; restore keeps a stack of
+what the minimize key minimized, falling back to any minimized window;
+focus-toggle history comes from a **1.5s poll of the frontmost window, not
+`hs.window.filter`** — the windowfilter's focus subscription watches every
+window of every app and stalled the main runloop for minutes after focus
+changes (confirmed by `sample`ing the process, not guessed).
+
+Three things on the *machine* were silently eating chords and had to be
+cleared, worth knowing because none of them errors — the key just does
+nothing: macOS's default brightness symbolic hotkeys owned bare `F14`/`F15`
+(ids 53/54, enabled-by-default so absent from the plist — `hs.hotkey.
+systemAssigned()` sees them, `defaults read` doesn't); v1's hand-set
+Mission Control move-space bindings sat exactly on the new swap-↑/↓
+(`Ctrl+F14`/`F15`, ids 79–82 — reset to factory `Ctrl+←`/`→`, which v2
+assumes anyway); and Rectangle was still running with the entire v1 F-key
+config loaded (quit — the daemon replaces it; launch-at-login was already
+off). Still open by hand: delete the global `Minimize = ⇧F15` App Shortcut
+(`defaults delete -g NSUserKeyEquivalents`) — inert while the daemon runs,
+since the Carbon hotkey intercepts first.
+
+Verified: 27/27 chords registered (`WM.status()`), geometry selftest
+clean, and the window-operation pipeline live — `moveToUnit(top-half)` on
+a real Finder window landed pixel-exact and restored. **The hotkey→
+callback link is deliberately left to a real keypress**: synthetic
+chords (`hs.eventtap.keyStroke`) do not trigger Carbon hotkeys on this
+Mac at all — proven with a fresh hyper-chord hotkey and a flag, not
+inferred — so a synthetic end-to-end test is impossible here, and an
+earlier draft of this entry claiming one had passed was wrong (the
+"moved" frame it saw was ambiguous). Same lesson as §F20 ceiling: test
+against the layer that has to consume the key.
+
+Two hours of debugging that turned out to be two unrelated causes, worth
+recording so nobody repeats the chase: (1) `hs.window.filter`'s focus
+subscription genuinely stalled the runloop for minutes (hence the poll);
+(2) every "hang" after that was the `hs` CLI blocking on **stdin** — after
+`-c` it reads stdin for more commands, and a harness that hands it a
+never-closing pipe waits forever *while the payload has already executed*.
+`~/bin/hs -c '...' < /dev/null` is the whole fix. The IPC port was never
+broken; Hammerspoon's main thread was idle in every `sample` after the
+windowfilter was removed. **Not done:** a real-keyboard pass over all 27
+keys, and the Windows daemon's TOML + commit into `os/wm/windows/`,
+unchanged from below.
 
 ## The idea — three tiers collapsed to one
 
@@ -621,8 +680,9 @@ mode is survivable rather than silent. Costs nothing, no downside.
       dedicated minimize/restore keys (`hs.window:minimize()`/
       `:unminimize()`, once the Hammerspoon daemon exists) instead of a
       macOS App Shortcut; `tools/macos-shortcuts.js` is retired.
-- [ ] **The Hammerspoon daemon itself.** §WM redesign v2 only shipped the
-      keyboard layer that targets it — no Lua exists yet.
+- [x] ~~**The Hammerspoon daemon itself.**~~ Shipped and installed
+      2026-08-29 — `os/wm/mac/init.lua`, see §Hammerspoon daemon below.
+      Still wants a real-keyboard pass (only synthetic chords tested).
 - [ ] **The Windows daemon's real TOML config**, matching
       `data/wm-actions.js`'s `win` column exactly (region names, direction
       names, workspace numbers) — not written this pass either.

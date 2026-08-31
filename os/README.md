@@ -10,7 +10,7 @@ is a checkout plus a few pastes rather than an archaeology project.
 | --- | --- | --- |
 | [`vscode/`](vscode/) | the editor half of the `VSCode_macOS` / `VSCode_Win` layers — custom chords, and the one setting that keeps them alive inside the integrated terminal | mac ✅ · windows ⬜ |
 | [`host-switch/`](host-switch/) | the mouse follows the keyboard: Magic-layer BT keys push the MX Master 3S to the same host. Hammerspoon on the Mac; on Windows either a dependency-free Python listener or the AutoHotkey one | mac ✅ · windows ✅ |
-| *(not vendored)* | the WM daemons behind the `WM_Win` / `WM_practice` layers. The Windows one — Python, `RegisterHotKey` + `WM_HOTKEY`, no admin — is proven on real 3-monitor hardware but still only on that machine; the macOS one doesn't exist yet. `data/wm-actions.js` describes what every key is meant to do on both | windows ✅ (uncommitted) |
+| [`wm/`](wm/) | the WM daemons behind the `WM_Win` / `WM_practice` layers. macOS: Hammerspoon, 27 actions, hand-rolled directional geometry. Windows: Python, `RegisterHotKey` + `WM_HOTKEY`, no admin — proven on real 3-monitor hardware but still only on that machine. `data/wm-actions.js` describes what every key does on both | mac ✅ · windows ✅ (uncommitted) |
 
 Two rules everything here follows:
 
