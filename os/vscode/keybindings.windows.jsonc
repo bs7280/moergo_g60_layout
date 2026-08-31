@@ -27,8 +27,9 @@
   { "key": "shift+f18", "command": "claude-vscode.editor.open",
     "when": "!config.claudeCode.useTerminal" },
 
-  // ---- Shift+F17 (position 40, and the RAlt *tap* on the Windows base
-  // layer) — focus <-> blur the Claude input. This is one chord and THREE
+  // ---- Shift+F17 (position 40) — focus <-> blur the Claude input. Was
+  // also the RAlt *tap* on the Windows base layer until 2026-08-31, when
+  // that thumb went back to being a plain Alt key. This is one chord and THREE
   // commands: the extension discriminates by `when`, so all three have to
   // be bound or the toggle only works in one direction. `focus` and `blur`
   // cover the normal (panel/sidebar) mode; `terminal.open.keyboard` is the

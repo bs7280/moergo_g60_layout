@@ -1082,6 +1082,78 @@ happy, `tools/bake.js` and `tools/cheatsheet.js` regenerated, and the
 overlays' ghosts now read `F1 F2 F3 …` (Keypad) and the mouse arrows
 (Mouse). **Not yet flashed** — needs `tools/flash.sh` after CI builds.
 
+**The VS Code door moved off the RAlt thumb, 2026-08-31.** Reported from
+daily use: taking #57 for the layer cost the board its only dedicated
+Option/Alt key, and the home-row `⌥` on `S`/`L` does not cover the cases
+that want a thumb — `⌥`-click, `⌥`-drag, holding `⌥` while the fingers are
+busy. #57 is a plain `&kp RALT` again on both bases. Plain, not a `&mt`:
+a mod-tap there would fire stray `⌘Esc` on quick Alt taps, and the tap it
+would preserve (Claude focus/blur) already exists inside the layer on `V`.
+
+**The door is `'` (#35), held. One key, like the thumb it replaced.** All six
+thumbs are spoken for (Cursor, Keypad, Shift | RAlt, Mouse, Symbol) and every
+one costs a whole layer or the dedicated thumb Shift. The home row looked
+equally full — `A S D F`/`J K L ;` are this layer's own two quads, `G`/`H` are
+WM's doors — but that skipped the C6 column: `Esc` and `'` are plain `&kp`
+on both bases, carry no home-row mod, and sit in no combo.
+
+**Two things this went through before landing, both wrong:**
+
+1. **A `G`/`H`-style pair on `Esc` + `'`.** The reasoning was that a
+   bilateral layer strands whichever hand holds the door, so it needs one on
+   each hand. It does not. WM needs a pair because its content is a *single*
+   hand-spanning set either hand may want to drive; here the right pinky
+   holding `'` still leaves index/middle/ring sitting on the focus quad and
+   the whole left hand free on the movement quad. Exactly one binding was
+   genuinely blocked — focus-right, on the pinky — and moving one binding is
+   cheaper than a second door.
+2. **Stealing `Esc`.** Even as the left half of that pair it was a bad trade:
+   `Esc` is a real key pressed constantly, and putting a 250 ms hold-tap under
+   it taxes every one of those presses. `'` is not in that class.
+
+**The one binding that had to move.** The focus quad slid one column in,
+`J K L ;` (31-34) → `H J K L` (30-33), which is where it lived before
+2026-08-28; `LC(R)` (openRecent) went from `H` to `Y` (18). Arrow order is
+unchanged (`← ↑ ↓ →`, the board-wide rule) and so is every chord→command
+assignment, so this stays firmware-only — `os/vscode/keybindings.jsonc` is
+untouched and neither machine needs a re-merge. Still 21 bound keys.
+
+**Typing guard.** `VSC_hold_v1` copies `WM_hold_v1`'s parameters
+(`tap-preferred`, 250 ms term, 300 ms quick-tap) with the high
+`require-prior-idle-ms = <250>` that `H` uses, for the same reason: `"I'll"`,
+`"we'll"` put a trigger key straight after the apostrophe, and the idle guard
+is what resolves those as taps. `hold-trigger-key-positions` lists all 21
+bound positions — both hands this time, since the door is same-hand for half
+of them — so `'` followed by anything unbound can never take the hold.
+
+**A second, sticky route: Magic + `N`/`M`.** The hold door is right for a
+two-second dip into the layer and wrong for an hour of editing. `&to
+LAYER_VSCode_macOS` (#42) and `&to LAYER_VSCode_Win` (#43) sit directly below
+the WM pair on `H`/`J`, same two columns, so the Magic layer's jump block reads
+as one block. `&to` deactivates only the layers ABOVE its target, so the OS
+mode underneath survives — `VSCode_Win` still falls through to `HRM_WinLinx`,
+the same mechanism `WM_Win` has relied on since it shipped.
+
+**Getting back out.** #42/#43, #50 (Typing), and thumbs #54-#56 (`HRM_WinLinx`,
+`HRM_macOS`, `Autoshift`) are all `&trans` on both VS Code layers, and the
+Magic key itself (#36) is too, so Magic reaches every base-return key from
+inside a latched layer. No dedicated `&to 0` escape key was added — WM and
+Keypad both have one, but here it would cost a position for a route Magic
+already covers.
+
+**`+Q+` is bound to `&kp SQT` inside both layers, and that is load-bearing.**
+ZMK layer state is a bitmask, not a counter: with the layer latched by `&to`,
+a `&trans` at #35 would fall through to the base's `&mo` door, and releasing
+it would clear the bit and drop you out of the layer you deliberately latched.
+Binding the position stops the fallthrough — and since a latched VS Code layer
+still types normally everywhere it is transparent, the apostrophe should type
+an apostrophe anyway.
+
+Verified: 21 layers parse and validate clean, `tools/firmware-sync.js` is
+happy, `tools/bake.js` and `tools/cheatsheet.js` regenerated,
+`tools/vscode-config.js` still reports `all good` on both editors.
+**Not yet flashed** — needs `tools/flash.sh` after CI builds.
+
 ## Open questions
 
 - [ ] Is `LALT` on both ring fingers deliberate? Every other right-hand mod uses

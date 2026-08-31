@@ -12,7 +12,7 @@
 //
 // Defaults-first: this file exists ONLY for the chords VS Code and the
 // Claude extension ship with NO default. Everything else on those layers
-// (U/I/O/;/T/G/S/A/C/R and the RAlt tap) rides a real existing default and
+// (U/I/O/;/T/G/S/A/C/R/V) rides a real existing default and
 // needs nothing here — see `data/vscode-actions.js` for the full 21-key map.
 //
 // `node tools/vscode-config.js` checks a real machine against this file.

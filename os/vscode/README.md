@@ -1,9 +1,17 @@
 # vscode/ — the editor half of the apps layers
 
 The keyboard has two VS Code layers, `VSCode_macOS` (16) and `VSCode_Win`
-(17), both reached by **holding RAlt**. 21 keys are bound on each. This
+(17), reached two ways: **hold `'`** — the right pinky's outer home-row key,
+one door, not a WM-style `G`/`H` pair — or **Magic + `N`** (macOS) / **Magic +
+`M`** (Windows) to *toggle* in and stay there until you Magic back out to a
+base, Typing or Autoshift, exactly like the WM layers one row up. 21 keys are bound on each. This
 folder is everything the editor needs on the other end of that — and, just
 as importantly, a written record of how little that is and why.
+
+> Until 2026-08-31 the door was the `RAlt` thumb (#57), which cost the board
+> its only Option/Alt key outside the home-row mods. That thumb is a plain
+> `&kp RALT` again, and the focus quad slid one column in to `H J K L` so the
+> right pinky is free to hold the door. `openRecent` moved to `Y`.
 
 `vscode.html` in the repo root draws the layer as *what it does*; this file
 covers *what to install so it does it*.
@@ -138,7 +146,7 @@ were nearly stepped on during planning, which is why the table exists.
 | `Ctrl+Shift+F13`–`F16` | VS Code panel-focus quad | app-local |
 | `Alt+Shift+F13`–`F17` | VS Code move-tab quad + maximize | app-local |
 | `Shift+F17`–`F19` | Claude focus / new session (Windows) + terminal profile picker | app-local |
-| `Shift+F20`, `Alt+F13`–`F20` | free — the only space left, spend deliberately | — |
+| `Shift+F16`, `Shift+F20` | free — the only space left, spend deliberately | — |
 
 `F21`–`F24` are usable on Windows only: macOS has no Carbon keycode for
 them, so nothing there can be bound to them (see PLAN.md). The `WM_Win`

@@ -15,10 +15,13 @@
  * default chord happens to differ by OS (5 of the 20 do; the other 15 emit
  * the identical chord on both layers).
  *
- * `pos` only, no `altPos` — nothing on this layer is mirrored (there's no
- * G/H-style dual-hand entry here; the whole layer is reached by holding
- * one key, `RAlt`, so both hands are free once it's held and mirroring
- * would just be pure duplication for no benefit).
+ * `pos` only, no `altPos` — nothing on this layer is mirrored, and the
+ * layer is reached by ONE key: `'` (#35) since 2026-08-31, the `RAlt`
+ * thumb before that. No G/H-style dual-hand pair, because this layer never
+ * needed one — see PLAN.md. The same date added a second, sticky route:
+ * Magic + `N`/`M` (#42/#43) is `&to`, so it latches until you Magic back to
+ * a base. Neither route changes what any position does, so nothing below
+ * varies by how you got here.
  *
  * Physical split (2026-08-24, matches PLAN.md §WM redesign v2.1's
  * focus/movement split): right hand row2 (`J K L ;`, positions 31-34) =
@@ -31,7 +34,11 @@
  * undocumented Alt+K) to the now-free row1 slots (12/13).
  *
  * **Revised 2026-08-28: both quads read `← ↑ ↓ →`, and the focus quad
- * moved from `H J K L` (30-33) to `J K L ;` (31-34).** They used to read
+ * moved from `H J K L` (30-33) to `J K L ;` (31-34)** — then back to
+ * `H J K L` on 2026-08-31, when `'` became the layer door and the right
+ * pinky could no longer reach `;` while holding it. `LC(R)` went with it,
+ * from `H` to `Y` (18). Arrow order and every chord->command assignment
+ * are untouched, so this stays firmware-only. They used to read
  * `← ↓ ↑ →` — vim order — on the theory that this layer's whole point was
  * mirroring vim's `⌃W` window model. That justification doesn't hold up:
  * there's no vim, no Vim extension, and no `⌃W` habit anywhere in this
@@ -53,7 +60,8 @@
  * keybindings.json re-merged. Reflash and it's done.
  *
  * `LC(R)` (openRecent) moved to the freed `H` (30); it was on `;` (34),
- * which the focus quad now needs. Everything else on the layer
+ * which the focus quad then needed. Superseded 2026-08-31: it now sits on
+ * `Y` (18), `H` having gone back to the focus quad. Everything else on the layer
  * (editor/terminal/Claude commands) rides VS Code's own defaults or a
  * handful of one-off custom chords, unrelated to the focus/movement split.
  *
@@ -84,13 +92,13 @@
 (function (root) {
   root.G80_VSCODE_ACTIONS = [
     // ==================================================== RIGHT hand — focus domain
-    { key: 'LC(LS(F13))', pos: 31, group: 'focus', label: '←', prompt: 'Focus the panel to your LEFT',
+    { key: 'LC(LS(F13))', pos: 30, group: 'focus', label: '←', prompt: 'Focus the panel to your LEFT',
       command: 'workbench.action.navigateLeft' },
-    { key: 'LC(LS(F15))', pos: 32, group: 'focus', label: '↑', prompt: 'Focus the panel ABOVE',
+    { key: 'LC(LS(F15))', pos: 31, group: 'focus', label: '↑', prompt: 'Focus the panel ABOVE',
       command: 'workbench.action.navigateUp' },
-    { key: 'LC(LS(F14))', pos: 33, group: 'focus', label: '↓', prompt: 'Focus the panel BELOW',
+    { key: 'LC(LS(F14))', pos: 32, group: 'focus', label: '↓', prompt: 'Focus the panel BELOW',
       command: 'workbench.action.navigateDown' },
-    { key: 'LC(LS(F16))', pos: 34, group: 'focus', label: '→', prompt: 'Focus the panel to your RIGHT',
+    { key: 'LC(LS(F16))', pos: 33, group: 'focus', label: '→', prompt: 'Focus the panel to your RIGHT',
       command: 'workbench.action.navigateRight' },
 
     // ==================================================== LEFT hand — movement domain (added 2026-08-24, repositioned 2026-08-25)
@@ -116,7 +124,7 @@
       command: 'workbench.action.showAllEditorsByMostRecentlyUsed (was quickOpenPreviousRecentlyUsedEditor — see os/vscode/keybindings.jsonc for why)' },
     { key: 'LG(BSLH)', winKey: 'LC(BSLH)', pos: 12, group: 'editor', label: 'split', prompt: 'Split the editor',
       command: 'workbench.action.splitEditor' },
-    { key: 'LC(R)', pos: 30, group: 'editor', label: 'recent', prompt: 'Open a recently opened file, folder, or workspace',
+    { key: 'LC(R)', pos: 18, group: 'editor', label: 'recent', prompt: 'Open a recently opened file, folder, or workspace',
       command: 'workbench.action.openRecent' },
 
     // ------------------------------------------------------------- terminal
@@ -130,7 +138,7 @@
     // --------------------------------------------------------------- claude
     { key: 'LG(LS(ESC))', winKey: 'LS(F18)', pos: 39, group: 'claude', label: 'session', prompt: 'Claude extension — open Claude in a new tab (new session)',
       command: 'claude-vscode.editor.open — mac rides the extension default (⌘⇧Esc); win needs an entry, its default Ctrl+Shift+Esc is Task Manager. See os/vscode/keybindings.windows.jsonc' },
-    { key: 'LG(ESC)', winKey: 'LS(F17)', pos: 40, group: 'claude', label: 'focus', prompt: 'Claude extension — focus ⇄ blur (dedicated key, added 2026-08-25 — same chord as the RAlt-tap shortcut, but reachable without any tap/hold timing risk once you\'re already holding RAlt into this layer)',
+    { key: 'LG(ESC)', winKey: 'LS(F17)', pos: 40, group: 'claude', label: 'focus', prompt: 'Claude extension — focus ⇄ blur (dedicated key, added 2026-08-25 — the layer\'s own route to focus/blur — since 2026-08-31 there is no base-layer tap for it, the RAlt thumb having gone back to being a plain Option/Alt key)',
       command: 'claude-vscode.focus / .blur / .terminal.open.keyboard — one chord, three commands split by `when`. mac rides the extension default (⌘Esc); win needs all three bound, its default Ctrl+Esc opens the Start menu. See os/vscode/keybindings.windows.jsonc' },
 
     // ---------------------------------------------------------------- other
