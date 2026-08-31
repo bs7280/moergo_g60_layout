@@ -16,12 +16,10 @@
  * the identical chord on both layers).
  *
  * `pos` only, no `altPos` — nothing on this layer is mirrored, and the
- * layer is reached by ONE key: `'` (#35) since 2026-08-31, the `RAlt`
- * thumb before that. No G/H-style dual-hand pair, because this layer never
- * needed one — see PLAN.md. The same date added a second, sticky route:
- * Magic + `N`/`M` (#42/#43) is `&to`, so it latches until you Magic back to
- * a base. Neither route changes what any position does, so nothing below
- * varies by how you got here.
+ * layer is reached one way as of 2026-08-31: Magic + `N`/`M` (#42/#43),
+ * which is `&to` and latches until you Magic back to a base. The `RAlt`
+ * thumb that used to hold it went back to being Option/Alt, and no other
+ * key could take the hold without costing a quad key — see PLAN.md.
  *
  * Physical split (2026-08-24, matches PLAN.md §WM redesign v2.1's
  * focus/movement split): right hand row2 (`J K L ;`, positions 31-34) =
@@ -92,13 +90,13 @@
 (function (root) {
   root.G80_VSCODE_ACTIONS = [
     // ==================================================== RIGHT hand — focus domain
-    { key: 'LC(LS(F13))', pos: 30, group: 'focus', label: '←', prompt: 'Focus the panel to your LEFT',
+    { key: 'LC(LS(F13))', pos: 31, group: 'focus', label: '←', prompt: 'Focus the panel to your LEFT',
       command: 'workbench.action.navigateLeft' },
-    { key: 'LC(LS(F15))', pos: 31, group: 'focus', label: '↑', prompt: 'Focus the panel ABOVE',
+    { key: 'LC(LS(F15))', pos: 32, group: 'focus', label: '↑', prompt: 'Focus the panel ABOVE',
       command: 'workbench.action.navigateUp' },
-    { key: 'LC(LS(F14))', pos: 32, group: 'focus', label: '↓', prompt: 'Focus the panel BELOW',
+    { key: 'LC(LS(F14))', pos: 33, group: 'focus', label: '↓', prompt: 'Focus the panel BELOW',
       command: 'workbench.action.navigateDown' },
-    { key: 'LC(LS(F16))', pos: 33, group: 'focus', label: '→', prompt: 'Focus the panel to your RIGHT',
+    { key: 'LC(LS(F16))', pos: 34, group: 'focus', label: '→', prompt: 'Focus the panel to your RIGHT',
       command: 'workbench.action.navigateRight' },
 
     // ==================================================== LEFT hand — movement domain (added 2026-08-24, repositioned 2026-08-25)
@@ -124,7 +122,7 @@
       command: 'workbench.action.showAllEditorsByMostRecentlyUsed (was quickOpenPreviousRecentlyUsedEditor — see os/vscode/keybindings.jsonc for why)' },
     { key: 'LG(BSLH)', winKey: 'LC(BSLH)', pos: 12, group: 'editor', label: 'split', prompt: 'Split the editor',
       command: 'workbench.action.splitEditor' },
-    { key: 'LC(R)', pos: 18, group: 'editor', label: 'recent', prompt: 'Open a recently opened file, folder, or workspace',
+    { key: 'LC(R)', pos: 30, group: 'editor', label: 'recent', prompt: 'Open a recently opened file, folder, or workspace',
       command: 'workbench.action.openRecent' },
 
     // ------------------------------------------------------------- terminal

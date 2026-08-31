@@ -1,17 +1,21 @@
 # vscode/ — the editor half of the apps layers
 
 The keyboard has two VS Code layers, `VSCode_macOS` (16) and `VSCode_Win`
-(17), reached two ways: **hold `'`** — the right pinky's outer home-row key,
-one door, not a WM-style `G`/`H` pair — or **Magic + `N`** (macOS) / **Magic +
-`M`** (Windows) to *toggle* in and stay there until you Magic back out to a
-base, Typing or Autoshift, exactly like the WM layers one row up. 21 keys are bound on each. This
-folder is everything the editor needs on the other end of that — and, just
-as importantly, a written record of how little that is and why.
+(17), reached one way: **Magic + `N`** (macOS) / **Magic + `M`** (Windows).
+That is a `&to`, so it latches — you stay in the layer until you Magic back
+out to a base, Typing or Autoshift, exactly like the WM layers one row up.
+21 keys are bound on each. This folder is everything the editor needs on the
+other end of that — and, just as importantly, a written record of how little
+that is and why.
 
-> Until 2026-08-31 the door was the `RAlt` thumb (#57), which cost the board
-> its only Option/Alt key outside the home-row mods. That thumb is a plain
-> `&kp RALT` again, and the focus quad slid one column in to `H J K L` so the
-> right pinky is free to hold the door. `openRecent` moved to `Y`.
+> **There is no hold door any more, and that is deliberate.** Until
+> 2026-08-31 the layer was held on the `RAlt` thumb (#57), which cost the
+> board its only Option/Alt key outside the home-row mods; that thumb is a
+> plain `&kp RALT` again. No other key can take over the hold: both quads use
+> all four fingers of their hand, so any pinky-column door blocks its own
+> hand — `'` blocks `;` (focus-right), `Esc`/`Tab` block `A` (move-left).
+> Thumbs are the only non-quad fingers and all six are spoken for. See
+> PLAN.md for the full walk-through.
 
 `vscode.html` in the repo root draws the layer as *what it does*; this file
 covers *what to install so it does it*.

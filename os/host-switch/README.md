@@ -21,24 +21,27 @@ is exactly the machine that owns the mouse. Ordering solved by construction.
 Every machine binds all three. Receiving the hotkey for the machine you're
 already on means the keyboard wasn't going anywhere — the push is a no-op.
 
-Each row rests on two independent facts, and they aren't equally solid.
-Which BT profile is which machine is **confirmed** for all three (`bt_hop_0`
-is the leftmost of the four Magic-layer BT keys and is the Mac, then work,
-then the desktop). Which mouse channel each machine is has only been read
-off the mouse for one of them:
+Both halves of every row are confirmed. `bt_hop_0` is the leftmost of the
+four Magic-layer BT keys and goes to the Mac, then work, then the desktop;
+the mouse channels are as above.
 
 | machine | mouse channel | how we know |
 | --- | --- | --- |
-| macOS | 2 | ✅ read back via `ChangeHost getHostInfo` — `03 01`, i.e. 3 hosts, channel 2 |
-| work laptop | 1 | assumed; run `host_switch.py probe` there to confirm |
-| personal Windows | 3 | assumed; same |
+| macOS | 2 | read back off the mouse — `ChangeHost getHostInfo` answered `03 01`, i.e. 3 hosts, currently channel 2 |
+| work laptop | 1 | Ben, from the channel button he'd otherwise be pressing |
+| personal Windows | 3 | same |
 
-So the `F17` row is verified end to end — bringing the mouse *home* works
-from anywhere — while `F18` and `F19` are still carrying an inherited guess.
-If a hop sends the mouse to the wrong machine, that guess is the first thing
-to check, and correcting it is a one-line edit in this table on one machine.
-No reflash: the keymap only ever says *which BT profile*, never which mouse
-channel, so every mapping question is answered script-side on purpose.
+The Mac row is worth having both ways, because it pins the two numbering
+schemes together: the channel the mouse *reports* over HID++ is the same
+number as the one on its underside button. That's what makes the other two
+rows trustworthy without reading them back — they're known in button
+numbers, and the protocol speaks button numbers.
+
+What's still unproven here is the *code*, not the table. If a hop sends the
+mouse somewhere unexpected, suspect the listener before suspecting these
+numbers. Correcting a row is a one-line edit on one machine and no reflash:
+the keymap only ever says *which BT profile*, never which mouse channel, so
+every mapping question is answered script-side on purpose.
 
 ## The listeners
 
