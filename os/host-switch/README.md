@@ -21,6 +21,25 @@ is exactly the machine that owns the mouse. Ordering solved by construction.
 Every machine binds all three. Receiving the hotkey for the machine you're
 already on means the keyboard wasn't going anywhere — the push is a no-op.
 
+Each row rests on two independent facts, and they aren't equally solid.
+Which BT profile is which machine is **confirmed** for all three (`bt_hop_0`
+is the leftmost of the four Magic-layer BT keys and is the Mac, then work,
+then the desktop). Which mouse channel each machine is has only been read
+off the mouse for one of them:
+
+| machine | mouse channel | how we know |
+| --- | --- | --- |
+| macOS | 2 | ✅ read back via `ChangeHost getHostInfo` — `03 01`, i.e. 3 hosts, channel 2 |
+| work laptop | 1 | assumed; run `host_switch.py probe` there to confirm |
+| personal Windows | 3 | assumed; same |
+
+So the `F17` row is verified end to end — bringing the mouse *home* works
+from anywhere — while `F18` and `F19` are still carrying an inherited guess.
+If a hop sends the mouse to the wrong machine, that guess is the first thing
+to check, and correcting it is a one-line edit in this table on one machine.
+No reflash: the keymap only ever says *which BT profile*, never which mouse
+channel, so every mapping question is answered script-side on purpose.
+
 ## The listeners
 
 | | listener | HID write | needs |
