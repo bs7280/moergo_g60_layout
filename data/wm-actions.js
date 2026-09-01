@@ -58,17 +58,19 @@
  * `K` (up) is at position 32 through all of this — it was the one key the
  * two conventions always agreed on, and it never moved.
  *
- * Windows: a proven Python daemon (`RegisterHotKey` + `WM_HOTKEY`, no admin
- * needed) exposes directional window focus, window swap, resize, a stable
- * screen-position window cycle, minimize-based fake workspaces, and ~25
- * named placement regions — verified end to end on real 3-monitor hardware.
+ * Both daemons exist now. macOS: `os/wm/mac/init.lua` (Hammerspoon), in
+ * this repo. Windows: the Python daemon (`RegisterHotKey` + `WM_HOTKEY` +
+ * `ctypes`, no admin and nothing to install), which lives on the work
+ * laptop and is still uncommitted. The `mac`/`win` fields below name the
+ * call each one makes.
  *
- * macOS: no daemon exists yet. The `mac` field below describes the intended
- * Hammerspoon call for each action. `hs.window:focusWindowWest/East/North/
- * South()` exists but has open correctness bugs (#2558 wrong-app-focus,
- * #3574 hangs) — focus, swap, and cycle are all meant to be HAND-ROLLED
- * ports of the Windows daemon's own proven geometry algorithm (reversible,
- * non-wrapping, sorted by screen position), not the Hammerspoon builtins.
+ * Focus, swap and cycle are HAND-ROLLED geometry in both — the same
+ * algorithm, ported: candidates whose center lies in the target direction,
+ * prefer perpendicular-axis overlap, nearest wins, never wrap. On macOS
+ * that is because `hs.window:focusWindowWest/East/North/South()` has open
+ * correctness bugs (#2558 wrong-app-focus, #3574 hangs); on Windows there
+ * is no builtin to have a bug.
+ *
  * Workspaces are cut entirely from macOS: `hs.spaces.moveWindowToSpace` is
  * confirmed broken on Sequoia (open issue #3698, fix unmerged), and Mission
  * Control already covers the underlying need.
@@ -76,11 +78,18 @@
  * `pos` is the ONE physical position for every action now — no `altPos`,
  * no mirroring, full stop. Same position on both OS layers for every
  * shared action (one physical map, two emissions, same principle as v1,
- * just without the duplication). `key` is always the macOS/F-key-pattern
- * representation, even for the 6 actions (place-halves, minimize, restore)
- * where Windows uses a native `Win`+chord instead — those carry an
- * explicit `winKey` that `tools/edits/wm-redesign-win.js` reads instead of
- * `key`; everything else emits `key` unchanged on both OS layers.
+ * just without the duplication).
+ *
+ * **Revised 2026-09-01: there is no `winKey` any more.** Six actions used
+ * to carry one — place-halves on `LG(LEFT/UP/DOWN/RIGHT)`, minimize and
+ * restore on `LG(DOWN)`/`LG(UP)` — so that `WM_Win` leaned on native
+ * Windows Snap for the one part of the board the old daemon didn't cover.
+ * The Windows daemon covers those six the same way it covers the other
+ * 35, so all 27 shared actions emit the SAME chord on both OS layers and
+ * `key` is the only chord field left. Snap was never quite the intent
+ * anyway: `Win+Up` maximizes rather than taking the top half, `Win+Down`
+ * un-maximizes before it minimizes, and Windows 11 answers `Win+Left`
+ * with a Snap Layouts flyout. The daemon just sets the rect.
  *
  * `os: 'win'` marks the 14 workspace actions that don't exist on macOS at
  * all (omitted `os` means both). These live on `F21`-`F24`, which macOS
@@ -128,8 +137,9 @@
  * Minimize/restore aren't in either daemon's original action list — added
  * back here (dropping 2 of what would've been 4 extra place-quadrants)
  * since minimize is far more common than a third/fourth quadrant, and
- * macOS otherwise had zero fallback for it (Windows already covers it
- * contextually via the unchanged Win+Up/Win+Down at the place-half row).
+ * neither OS had a fallback for it once the layer stopped emitting
+ * `Win`+arrow. Both daemons implement it directly, and restore pops a
+ * stack of what the minimize key minimized rather than guessing.
  *
  * Reserved elsewhere, never bind these regardless of future edits:
  *   LC(LS(F17))-LC(LS(F20))   bt-mouse-follow.js BT-hop macros, both OS
@@ -177,13 +187,13 @@
 
     // ------------------------------------------------- place: halves (repositioned 2026-08-28, see doc comment)
     { key: 'F17', pos: 31, group: 'place', label: '←', prompt: 'Snap the window to the LEFT half',
-      mac: 'Hammerspoon → moveToUnit(left-half)', win: 'native — Win+Left', winKey: 'LG(LEFT)' },
+      mac: 'Hammerspoon → moveToUnit(left-half)', win: 'daemon → place region=left' },
     { key: 'F18', pos: 32, group: 'place', label: '↑', prompt: 'Snap the window to the TOP half',
-      mac: 'Hammerspoon → moveToUnit(top-half)', win: 'native — Win+Up', winKey: 'LG(UP)' },
+      mac: 'Hammerspoon → moveToUnit(top-half)', win: 'daemon → place region=top' },
     { key: 'F19', pos: 33, group: 'place', label: '↓', prompt: 'Snap the window to the BOTTOM half',
-      mac: 'Hammerspoon → moveToUnit(bottom-half)', win: 'native — Win+Down', winKey: 'LG(DOWN)' },
+      mac: 'Hammerspoon → moveToUnit(bottom-half)', win: 'daemon → place region=bottom' },
     { key: 'F20', pos: 34, group: 'place', label: '→', prompt: 'Snap the window to the RIGHT half',
-      mac: 'Hammerspoon → moveToUnit(right-half)', win: 'native — Win+Right', winKey: 'LG(RIGHT)' },
+      mac: 'Hammerspoon → moveToUnit(right-half)', win: 'daemon → place region=right' },
     { key: 'LA(F14)', pos: 35, group: 'place', label: 'center', prompt: 'Center the window without maximizing it',
       mac: 'Hammerspoon → moveToUnit(center, 70%)', win: 'daemon → place region=center' },
 
@@ -201,9 +211,9 @@
 
     // -------------------------------------------------- place: minimize/restore + last quadrant
     { key: 'LA(F16)', pos: 51, group: 'place', label: 'min', prompt: 'Minimize the window',
-      mac: 'Hammerspoon → focused:minimize()', win: 'native — Win+Down (same chord as snap-bottom; redundant on purpose)', winKey: 'LG(DOWN)' },
+      mac: 'Hammerspoon → focused:minimize()', win: 'daemon → minimize' },
     { key: 'LA(F17)', pos: 52, group: 'place', label: 'restore', prompt: 'Un-minimize / restore the window',
-      mac: 'Hammerspoon → focused:unminimize()', win: 'native — Win+Up (same chord as snap-top; redundant on purpose)', winKey: 'LG(UP)' },
+      mac: 'Hammerspoon → focused:unminimize()', win: 'daemon → restore' },
     { key: 'LA(F18)', pos: 53, group: 'place', label: 'SE', prompt: 'Snap the window to the BOTTOM-RIGHT quarter',
       mac: 'Hammerspoon → moveToUnit(bottom-right)', win: 'daemon → place region=bottom-right' },
 

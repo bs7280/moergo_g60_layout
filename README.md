@@ -151,11 +151,14 @@ Dashed caps are the keys that get you in, orange ones the way out — all read
 off the keymap, so they can't go stale either. **Actions** cycles the caps
 between intent, F-key and base-layer letter.
 
-Underneath is the table you bind from. There are two WM layers — `WM_practice`
-sends F-keys for macOS, `WM_Win` sends native `Win`+chords — so it gets a
-column each, showing what that layer actually emits at that position plus what
-you still have to configure. The twin is found by position overlap and binding
-density, not by name, so a third one would appear on its own.
+Underneath is the table you bind from. There are two WM layers, `WM_practice`
+(macOS) and `WM_Win`, so it gets a column each, showing what that layer
+actually emits at that position plus what you still have to configure. Since
+2026-09-01 the two agree on all 27 shared actions — `WM_Win` used to send
+native `Win`+arrow for place-halves and minimize/restore and now sends the
+same F-keys macOS does, so the only difference left is the 14 workspace keys
+on `F21`-`F24` that only Windows has. The twin is found by position overlap
+and binding density, not by name, so a third one would appear on its own.
 
 ## Per-OS twins, and the two layers that never had one
 

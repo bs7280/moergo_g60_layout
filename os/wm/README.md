@@ -85,3 +85,43 @@ also reads stdin for more commands and will sit forever on a pipe that
 never closes, *after* the payload already ran; and don't test hotkeys with
 `hs.eventtap.keyStroke` — synthetic events don't trigger Carbon hotkeys on
 this machine, so only a real keypress proves that link.
+
+## Windows
+
+The daemon lives on the work laptop and is still uncommitted; it belongs at
+`windows/` here. `RegisterHotKey` + `WM_HOTKEY`, `ctypes` against user32 and
+dwmapi, no admin and nothing to install — same constraints as
+`../host-switch/windows/host_switch.py`, for the same reason. 41 actions:
+everything macOS has, plus the 14 minimize-based workspace keys on `F21`-`F24`.
+
+### 2026-09-01 — six chords moved off native Snap, so the daemon owns them now
+
+`WM_Win` used to send native `Win`+arrow for the four place-halves (positions
+31-34) and for minimize/restore (51-52) — the one part of the board the daemon
+didn't cover. It doesn't any more. Those six positions now emit exactly what
+the macOS layer emits:
+
+| position | was | now | action |
+| --- | --- | --- | --- |
+| 31 | `Win+←` | `F17` | place region=left |
+| 32 | `Win+↑` | `F18` | place region=top |
+| 33 | `Win+↓` | `F19` | place region=bottom |
+| 34 | `Win+→` | `F20` | place region=right |
+| 51 | `Win+↓` | `Alt+F16` | minimize |
+| 52 | `Win+↑` | `Alt+F17` | restore |
+
+**The daemon has to be binding all six before this flash is an improvement.**
+Everything else on the layer was already going to it; these are the only new
+rows. If a half-snap does nothing after reflashing, that chord is what to
+check first.
+
+Why bother: Snap was never quite the intent. `Win+↑` maximizes rather than
+taking the top half, `Win+↓` un-maximizes before it minimizes (so the same key
+means two things depending on state), and Windows 11 answers `Win+←` with a
+Snap Layouts flyout instead of just snapping. Depending on it also meant the
+layer behaved differently on two Windows machines that are supposed to be one
+muscle memory. With this change all 27 shared actions emit the same chord on
+both OS layers, and the daemon — not the OS — is the only thing that differs.
+
+`data/wm-actions.js` no longer carries a `winKey` field at all; `key` is the
+one chord for both layers.
