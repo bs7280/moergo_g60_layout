@@ -6,11 +6,14 @@ carries forward only what's still true. Where the original was wrong, the
 correction is marked **CORRECTION** rather than quietly rewritten — the reasoning
 is usually the useful part.
 
-Last updated 2026-08-29. **WM redesign v2 shipped on the keyboard side, and
+Last updated 2026-09-01. **WM redesign v2 shipped on the keyboard side, and
 the macOS Hammerspoon daemon now exists and is installed — see §WM redesign
 v2 below, which supersedes most of what follows in this file about
 `WM_practice`/`WM_Win`.** Everything under "The idea" through
 "Not built yet" is v1 history, kept for the reasoning, not as current state.
+
+**2026-09-01: the last native chords are gone, and a host hop now carries the
+base layer with it — see §Two things the 09-01 flash changed.**
 
 Flash: `layouts/TailorKey v4.2m⁶ +wm-redesign.json`
 Check:  `node tools/diff.js "layouts/TailorKey v4.2m⁶ +apps-layers.json" "layouts/TailorKey v4.2m⁶ +wm-redesign.json"`
@@ -18,6 +21,52 @@ Check:  `node tools/diff.js "layouts/TailorKey v4.2m⁶ +apps-layers.json" "layo
 (v1, pre-2026-08-24: flash `+apps-layers.json`, import
 `config/RectangleConfig-wm.json`, check `node tools/macos-shortcuts.js` —
 both generators are retired, see §WM redesign v2.)
+
+## Two things the 09-01 flash changed
+
+Both are one-line-per-key keymap edits with no new tooling, and both close a
+gap that had been open since v2.
+
+**1. `WM_Win` stops sending `Win`+anything.** Six positions were still native:
+place-halves on 31-34 (`Win+←/↑/↓/→`) and minimize/restore on 51-52
+(`Win+↓`/`Win+↑`). They now emit `F17`-`F20` and `Alt+F16`/`Alt+F17` — exactly
+what the macOS layer emits at the same positions — so the Windows daemon owns
+all 41 actions and the two OS layers agree on all 27 shared ones. `winKey` is
+gone from `data/wm-actions.js` entirely.
+
+Native Snap was the right call at v1, when nothing on the Windows machine
+consumed F-keys and "10 of 12 need no software at all" was the whole
+argument for the layer. It stopped being right once a daemon existed: `Win+↑`
+maximizes rather than taking the top half, `Win+↓` un-maximizes before it
+minimizes (one key, two meanings, depending on state), Windows 11 answers
+`Win+←` with a Snap Layouts flyout, and the six keys behaved differently on
+two Windows machines that are supposed to be one muscle memory. The daemon
+just sets the rect.
+
+**The one thing to check after flashing:** the daemon has to be binding bare
+`F17`-`F20` and `Alt+F16`/`Alt+F17`. Everything else on the layer was already
+going to it. A half-snap that does nothing is that binding, not the keymap.
+
+**2. A host hop carries the base layer.** The mouse already followed the
+keyboard (`os/host-switch/`, verified working Mac → work laptop). The base
+layer didn’t: hopping to Windows left you on `HRM_macOS` until you
+remembered the Magic thumb key. The `bt_hop_*` macros now end with a `&to`:
+
+| macro | BT profile | mouse | base layer |
+| --- | --- | --- | --- |
+| `bt_hop_0` | 0 — macOS | channel 2 | `&to LAYER_HRM_macOS` |
+| `bt_hop_1` | 1 — work laptop | channel 1 | `&to LAYER_HRM_WinLinx` |
+| `bt_hop_2` | 2 — personal Windows | channel 3 | `&to LAYER_HRM_WinLinx` |
+| `bt_hop_3` | 3 — spare | unmapped | unchanged |
+
+`bt_hop_3` stays a plain hop for the same reason `host_switch.py` leaves
+`Ctrl+Shift+F20` out of `MACHINES`: no machine is behind BT profile 3, so
+there is no right answer to guess at.
+
+`&to` goes last in each macro, after `&out OUT_BLE` and `&bt BT_SEL n`. It is
+the same behavior the Magic layer’s thumb row already ran by hand, from the
+same held-Magic state, so it introduces no new layer-stack question — those
+two keys stay where they are as the manual override.
 
 ## WM redesign v2 (2026-08-24) — richer per-OS daemons, keyboard side only
 
@@ -672,10 +721,9 @@ mode is survivable rather than silent. Costs nothing, no downside.
 
 ## Still owed
 
-- [x] ~~**Windows 11.**~~ Moot — `WM_Win` no longer leans on native
-      `Win`+arrow snapping for anything except the unchanged place-half row
-      (see §WM redesign v2), so Windows 11's Snap Layouts changes don't
-      reach most of the layer anymore.
+- [x] ~~**Windows 11.**~~ Fully moot as of 2026-09-01: `WM_Win` no longer
+      sends `Win`+anything at all, so Windows 11's Snap Layouts changes
+      cannot reach the layer.
 - [x] ~~**`Minimize` App Shortcut**~~ — superseded. v2 gives macOS its own
       dedicated minimize/restore keys (`hs.window:minimize()`/
       `:unminimize()`, once the Hammerspoon daemon exists) instead of a
@@ -685,7 +733,13 @@ mode is survivable rather than silent. Costs nothing, no downside.
       Still wants a real-keyboard pass (only synthetic chords tested).
 - [ ] **The Windows daemon's real TOML config**, matching
       `data/wm-actions.js`'s `win` column exactly (region names, direction
-      names, workspace numbers) — not written this pass either.
+      names, workspace numbers) — and, as of 2026-09-01, six rows it never
+      needed before: `F17`-`F20` (place left/top/bottom/right) and
+      `Alt+F16`/`Alt+F17` (minimize/restore). Those used to be native
+      `Win`+arrow; nothing else on the layer changed.
+- [ ] **Commit the Windows daemon itself** into `os/wm/windows/`. It runs on
+      the work laptop and nowhere else, which makes every claim about it in
+      this repo unverifiable from here.
 - [ ] **Browser verification of `wm.html`/`practice.html`** — the join logic
       was checked directly (see §WM redesign v2), but nobody's looked at the
       actual rendered pages yet.

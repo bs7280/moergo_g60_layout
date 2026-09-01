@@ -628,7 +628,7 @@
                 , <&kp DOT>;
         };
 
-        // BT profile 0, mouse follows — taps Ctrl+Shift+F17 so the machine being left pushes the MX Master to the same host, then hops
+        // BT profile 0 = the Mac. Taps Ctrl+Shift+F17 so the machine being left pushes the MX Master to the same host, hops, then lands the base layer on macOS
         bt_hop_0: bt_hop_0 {
             label = "&BT_HOP_0";
             compatible = "zmk,behavior-macro";
@@ -637,10 +637,11 @@
             wait-ms = <125>;
             bindings = <&kp LC(LS(F17))>
                 , <&out OUT_BLE>
-                , <&bt BT_SEL 0>;
+                , <&bt BT_SEL 0>
+                , <&to LAYER_HRM_macOS>;
         };
 
-        // BT profile 1, mouse follows — taps Ctrl+Shift+F18 so the machine being left pushes the MX Master to the same host, then hops
+        // BT profile 1 = the work laptop. Taps Ctrl+Shift+F18 so the machine being left pushes the MX Master to the same host, hops, then lands the base layer on Windows
         bt_hop_1: bt_hop_1 {
             label = "&BT_HOP_1";
             compatible = "zmk,behavior-macro";
@@ -649,10 +650,11 @@
             wait-ms = <125>;
             bindings = <&kp LC(LS(F18))>
                 , <&out OUT_BLE>
-                , <&bt BT_SEL 1>;
+                , <&bt BT_SEL 1>
+                , <&to LAYER_HRM_WinLinx>;
         };
 
-        // BT profile 2, mouse follows — taps Ctrl+Shift+F19 so the machine being left pushes the MX Master to the same host, then hops
+        // BT profile 2 = the personal Windows desktop. Taps Ctrl+Shift+F19 so the machine being left pushes the MX Master to the same host, hops, then lands the base layer on Windows
         bt_hop_2: bt_hop_2 {
             label = "&BT_HOP_2";
             compatible = "zmk,behavior-macro";
@@ -661,10 +663,11 @@
             wait-ms = <125>;
             bindings = <&kp LC(LS(F19))>
                 , <&out OUT_BLE>
-                , <&bt BT_SEL 2>;
+                , <&bt BT_SEL 2>
+                , <&to LAYER_HRM_WinLinx>;
         };
 
-        // BT profile 3, mouse follows — taps Ctrl+Shift+F20 so the machine being left pushes the MX Master to the same host, then hops
+        // BT profile 3 — spare. No machine claims Ctrl+Shift+F20 and no base layer follows it; the hop is all this one does
         bt_hop_3: bt_hop_3 {
             label = "&BT_HOP_3";
             compatible = "zmk,behavior-macro";

@@ -1,9 +1,22 @@
 # host-switch/ — the mouse follows the keyboard
 
 The Magic-layer BT keys don't just hop the keyboard anymore: each one first
-taps **Ctrl+Shift+F17–F19** (see `tools/edits/bt-mouse-follow.js`), and a tiny
-listener on each machine turns that into an HID++ `ChangeHost` push that sends
-the MX Master 3S to the same destination.
+taps **Ctrl+Shift+F17–F19**, and a tiny listener on each machine turns that
+into an HID++ `ChangeHost` push that sends the MX Master 3S to the same
+destination.
+
+Since 2026-09-01 each hop also lands the **base layer** on the right OS, so
+one key moves all three things. `bt_hop_0` ends `&to LAYER_HRM_macOS`;
+`bt_hop_1` and `bt_hop_2` end `&to LAYER_HRM_WinLinx`. That was the last
+manual step left in a hop — the Magic layer still has the two base-layer
+keys on its thumb row, but you no longer have to remember them. `bt_hop_3`
+is deliberately left alone: no machine claims Ctrl+Shift+F20 either, so BT
+profile 3 stays a plain hop to nothing in particular.
+
+The base layer follows the *keyboard*, not the mouse, which is why it rides
+the same macro rather than the listener: the hop is the only moment anything
+knows which OS is about to be on the other end, and the keyboard is the only
+thing that has to be told.
 
 Why a hotkey and not a daemon: `ChangeHost` only works from the machine the
 mouse is *currently* on — you can push the mouse away, never pull it. The BT
@@ -12,11 +25,14 @@ is exactly the machine that owns the mouse. Ordering solved by construction.
 
 ## The table (same on every machine)
 
-| hotkey | keyboard goes to | mouse channel to push |
-| --- | --- | --- |
-| Ctrl+Shift+F17 | macOS | 2 |
-| Ctrl+Shift+F18 | work laptop | 1 |
-| Ctrl+Shift+F19 | personal Windows | 3 |
+| hotkey | keyboard goes to | mouse channel to push | base layer |
+| --- | --- | --- | --- |
+| Ctrl+Shift+F17 | macOS | 2 | `HRM_macOS` |
+| Ctrl+Shift+F18 | work laptop | 1 | `HRM_WinLinx` |
+| Ctrl+Shift+F19 | personal Windows | 3 | `HRM_WinLinx` |
+
+The listeners only ever read the first three columns; the base layer is the
+keyboard's own business and never leaves it.
 
 Every machine binds all three. Receiving the hotkey for the machine you're
 already on means the keyboard wasn't going anywhere — the push is a no-op.
