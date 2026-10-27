@@ -417,6 +417,19 @@
         (speeds[li] || (speeds[li] = {}))[field] =
           [parseInt(sm[1], 10), parseInt(sm[2], 10)];
       }
+
+      // The listener's own processors are the gain whenever no speed hold is
+      // up, i.e. on the layer the pad raises -- so they are that layer's row.
+      // Children carry no nested braces, so stripping them leaves the base.
+      if (t && layerNum(t[1]) != null) {
+        var baseBody = body.replace(/[A-Za-z_][\w-]*\s*\{[^{}]*\}/g, '');
+        var bm = /&zip_(?:xy|scroll)_scaler\s+(\d+)\s+(\d+)/.exec(baseBody);
+        var bl = layerNum(t[1]);
+        if (bm && !(speeds[bl] && speeds[bl][field])) {
+          (speeds[bl] || (speeds[bl] = {}))[field] =
+            [parseInt(bm[1], 10), parseInt(bm[2], 10)];
+        }
+      }
     }
     return { speeds: speeds, autoLayer: autoLayer };
   }

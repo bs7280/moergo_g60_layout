@@ -237,34 +237,42 @@
 };
 
 &cirque_lh_listener {
-    input-processors = <&zip_xy_to_scroll_mapper>, <&zip_temp_layer LAYER_Mouse 250>;
+    // Left pad = scroll wheel. Gains are ABSOLUTE: a speed hold's override
+    // replaces these base processors rather than stacking on them (ZMK
+    // input-listener semantics, no `process-next`), so each tier is spelled
+    // out in full. Base is MoErgo's stock 1/8; raw deltas (the old base) were
+    // 8x that and unusable. Same direction on every tier.
+    input-processors = <&zip_xy_scaler 1 8>, <&zip_xy_to_scroll_mapper>, <&zip_temp_layer LAYER_Mouse 250>;
     layer_MouseSlow {
         layers = <LAYER_MouseSlow>;
-        input-processors = <&zip_xy_scaler 5 14>, <&zip_xy_transform INPUT_TRANSFORM_Y_INVERT>, <&zip_xy_to_scroll_mapper>;
+        input-processors = <&zip_xy_scaler 1 16>, <&zip_xy_to_scroll_mapper>;
     };
     layer_MouseFast {
         layers = <LAYER_MouseFast>;
-        input-processors = <&zip_xy_scaler 3 2>, <&zip_xy_transform INPUT_TRANSFORM_Y_INVERT>, <&zip_xy_to_scroll_mapper>;
+        input-processors = <&zip_xy_scaler 1 4>, <&zip_xy_to_scroll_mapper>;
     };
     layer_MouseWarp {
         layers = <LAYER_MouseWarp>;
-        input-processors = <&zip_xy_scaler 13 3>, <&zip_xy_transform INPUT_TRANSFORM_Y_INVERT>, <&zip_xy_to_scroll_mapper>;
+        input-processors = <&zip_xy_scaler 1 2>, <&zip_xy_to_scroll_mapper>;
     };
 };
 
 &cirque_rh_listener {
-    input-processors = <&zip_temp_layer LAYER_Mouse 250>;
+    // Right pad = pointer. Absolute gains, same replace-not-stack rule as the
+    // left pad. Base is MoErgo's stock 3x (raw 1x was unusably slow); Warp is
+    // stock's own fast tier, Slow keeps raw 1x for pixel work.
+    input-processors = <&zip_xy_scaler 3 1>, <&zip_temp_layer LAYER_Mouse 250>;
     layer_MouseSlow {
         layers = <LAYER_MouseSlow>;
         input-processors = <&zip_xy_scaler 1 1>;
     };
     layer_MouseFast {
         layers = <LAYER_MouseFast>;
-        input-processors = <&zip_xy_scaler 4 1>;
+        input-processors = <&zip_xy_scaler 6 1>;
     };
     layer_MouseWarp {
         layers = <LAYER_MouseWarp>;
-        input-processors = <&zip_xy_scaler 6 1>;
+        input-processors = <&zip_xy_scaler 9 1>;
     };
 };
 
